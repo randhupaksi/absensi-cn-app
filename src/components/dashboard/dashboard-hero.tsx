@@ -6,7 +6,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, Clock3, School2 } from "lucide-react";
 
-export function DashboardHero() {
+type DashboardHeroProps = {
+  badge: string;
+  title: string;
+  description: string;
+  primaryAction: string;
+  secondaryAction: string;
+};
+
+export function DashboardHero({
+  badge,
+  title,
+  description,
+  primaryAction,
+  secondaryAction,
+}: DashboardHeroProps) {
   return (
     <motion.section
       initial={{ opacity: 0, y: 16 }}
@@ -14,28 +28,26 @@ export function DashboardHero() {
       transition={{ duration: 0.45, ease: "easeOut" }}
       className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]"
     >
-      <Card className="overflow-hidden border-white/70 bg-[linear-gradient(135deg,rgba(15,118,110,0.12),rgba(255,255,255,0.72),rgba(37,99,235,0.14))] shadow-sm backdrop-blur">
+        <Card className="overflow-hidden border-white/70 bg-[linear-gradient(135deg,rgba(15,118,110,0.12),rgba(255,255,255,0.72),rgba(37,99,235,0.14))] shadow-sm backdrop-blur">
         <CardContent className="space-y-6 p-8">
           <Badge className="rounded-full bg-white/80 px-4 py-1 text-sky-800 hover:bg-white/80">
-            Dashboard Overview
+            {badge}
           </Badge>
           <div className="space-y-3">
             <h1 className="font-heading text-4xl leading-tight font-semibold text-slate-950">
-              Monitoring kehadiran sekolah dengan tampilan yang lebih terstruktur.
+              {title}
             </h1>
             <p className="max-w-2xl text-base leading-7 text-slate-600">
-              Halaman dashboard ini disiapkan untuk menampung statistik absensi,
-              data per role, dan monitoring status harian dalam satu layout yang
-              konsisten.
+              {description}
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button className="rounded-full px-6">
-              Lanjut Bangun Auth Flow
+              {primaryAction}
               <ArrowRight className="size-4" />
             </Button>
             <Button variant="outline" className="rounded-full bg-white/70 px-6">
-              Tambah Integrasi API
+              {secondaryAction}
             </Button>
           </div>
         </CardContent>

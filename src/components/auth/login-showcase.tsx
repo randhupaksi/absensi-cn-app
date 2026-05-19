@@ -2,7 +2,9 @@
 
 import { Badge } from "@/components/ui/badge";
 import { motion, useMotionTemplate, useMotionValue, useReducedMotion, useSpring } from "motion/react";
+import Link from "next/link";
 import { Leaf, ShieldCheck } from "lucide-react";
+import { FaArrowLeft } from "react-icons/fa";
 import { useEffect, useRef } from "react";
 
 export function LoginShowcase() {
@@ -64,7 +66,23 @@ export function LoginShowcase() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, delay: 0.06 }}
+          className="space-y-4"
         >
+          <motion.div
+            whileHover={prefersReducedMotion ? undefined : { x: -2, y: -1 }}
+            transition={prefersReducedMotion ? undefined : { type: "spring", stiffness: 240, damping: 18 }}
+            className="w-fit"
+          >
+            <Link
+              href="/"
+              className="group inline-flex items-center gap-2 rounded-full border border-white/75 bg-white/72 px-3.5 py-2 text-sm font-medium text-slate-700 shadow-[0_12px_28px_rgba(15,23,42,0.08)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-white hover:text-emerald-800 hover:shadow-[0_18px_36px_rgba(22,85,58,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+            >
+              <span className="flex size-8 items-center justify-center rounded-full bg-[linear-gradient(180deg,#ffffff_0%,#ecfdf5_100%)] text-emerald-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_18px_rgba(22,85,58,0.1)] transition-transform duration-200 group-hover:-translate-x-0.5">
+                <FaArrowLeft className="size-4" />
+              </span>
+              <span className="leading-none">Kembali ke landing page</span>
+            </Link>
+          </motion.div>
           <motion.div
             animate={prefersReducedMotion ? undefined : { y: [0, -4, 0] }}
             transition={prefersReducedMotion ? undefined : { duration: 6, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}

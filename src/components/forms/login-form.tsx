@@ -3,6 +3,7 @@
 import { PremiumInput } from "@/components/auth/premium-input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { getDashboardPathForRole, saveAuthSession } from "@/lib/auth";
 import { loginSchema, type LoginSchema, type PortalType } from "@/lib/validations/login-schema";
 import { login, type AuthLoginResponse } from "@/services/auth.service";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -44,11 +45,13 @@ export function LoginForm({ portal }: LoginFormProps) {
       const result = await login(values);
       const response = result.data as AuthLoginResponse;
 
+      saveAuthSession(response);
+
       toast.success("Login berhasil", {
         description: `Selamat datang, ${response.user.name}.`,
       });
 
-      router.push("/dashboard");
+      router.push(getDashboardPathForRole(response.user.role));
     } catch (error) {
       toast.error("Login gagal", {
         description:

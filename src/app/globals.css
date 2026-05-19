@@ -81,6 +81,42 @@
   --sidebar-accent-foreground: oklch(0.24 0.04 245);
   --sidebar-border: oklch(0.9 0.01 232);
   --sidebar-ring: oklch(0.58 0.12 244);
+  --landing-page-bg: linear-gradient(180deg, #f8f6ef 0%, #f4f1e9 100%);
+  --landing-surface: rgba(255, 255, 255, 0.92);
+  --landing-surface-strong: #ffffff;
+  --landing-surface-soft: #f6fff9;
+  --landing-surface-dark: rgba(255, 255, 255, 0.06);
+  --landing-border-soft: rgba(16, 185, 129, 0.16);
+  --landing-border-strong: rgba(255, 255, 255, 0.14);
+  --landing-ink: #16233d;
+  --landing-ink-soft: #50617e;
+  --landing-ink-muted: rgba(255, 255, 255, 0.72);
+  --landing-accent: #10b981;
+  --landing-accent-strong: #19cb60;
+  --landing-accent-soft: rgba(16, 185, 129, 0.12);
+  --landing-accent-glow: rgba(16, 185, 129, 0.18);
+  --landing-dark-surface: #102a24;
+  --landing-footer-bg: linear-gradient(180deg, #f4f1e9 0%, #e5efe8 16%, #0b1614 16%, #0d1917 100%);
+  --landing-hero-overlay: linear-gradient(180deg, rgba(8, 22, 18, 0.34) 0%, rgba(8, 22, 18, 0.56) 56%, rgba(8, 22, 18, 0.68) 100%);
+  --landing-image-overlay-soft: linear-gradient(180deg, rgba(7, 24, 18, 0.04) 0%, rgba(7, 24, 18, 0.18) 100%);
+  --landing-major-overlay: linear-gradient(180deg, rgba(2, 6, 23, 0.18) 0%, rgba(2, 6, 23, 0.26) 38%, rgba(2, 6, 23, 0.72) 100%);
+  --landing-cta-image-overlay: linear-gradient(180deg, rgba(2, 6, 23, 0.08) 0%, rgba(2, 6, 23, 0.2) 42%, rgba(2, 6, 23, 0.34) 100%);
+  --landing-shadow-hero: 0 24px 64px rgba(15, 23, 42, 0.14);
+  --landing-shadow-soft: 0 18px 38px rgba(15, 23, 42, 0.05);
+  --landing-shadow-chip: 0 10px 24px rgba(16, 185, 129, 0.08);
+  --landing-shadow-card: 0 24px 42px rgba(15, 23, 42, 0.18);
+  --landing-shadow-card-hover: 0 34px 68px rgba(15, 23, 42, 0.26);
+  --landing-shadow-panel: 0 24px 50px rgba(15, 23, 42, 0.16);
+  --landing-shadow-float: 0 18px 40px rgba(15, 23, 42, 0.12);
+  --landing-shadow-cta: 0 34px 90px rgba(15, 23, 42, 0.2);
+  --landing-shadow-image: 0 24px 50px rgba(0, 0, 0, 0.3);
+  --landing-radius-section: 2.125rem;
+  --landing-radius-card: 2rem;
+  --landing-radius-panel: 1.5rem;
+  --landing-radius-pill: 999px;
+  --landing-space-section-x: 1.5rem;
+  --landing-space-section-y: 1.75rem;
+  --landing-space-card: 1rem;
 }
 
 .dark {

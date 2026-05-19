@@ -1,11 +1,21 @@
+"use client";
+
 import Link from "next/link";
 import { siteConfig } from "@/lib/config/site";
-import { dashboardNavigation } from "@/lib/constants/navigation";
+import { getAuthSession, mapApiRoleToDashboardRole } from "@/lib/auth";
+import { getDashboardNavigation } from "@/lib/constants/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { usePathname } from "next/navigation";
 
 export function SidebarNav() {
+  const pathname = usePathname();
+  const session = getAuthSession();
+  const navigation = getDashboardNavigation(
+    session ? mapApiRoleToDashboardRole(session.user.role) : "siswa",
+  );
+
   return (
     <aside className="sticky top-4 hidden h-[calc(100vh-2rem)] w-72 shrink-0 lg:block">
       <Card className="flex h-full flex-col justify-between border-white/70 bg-white/80 p-5 shadow-sm backdrop-blur">
@@ -24,13 +34,14 @@ export function SidebarNav() {
           </div>
 
           <nav className="space-y-2">
-            {dashboardNavigation.map((item) => {
+            {navigation.map((item) => {
               const Icon = item.icon;
               return (
                 <Button
-                  key={item.href}
+                  key={`${item.href}-${item.label}`}
+                  nativeButton={false}
                   render={<Link href={item.href} />}
-                  variant={item.active ? "default" : "ghost"}
+                  variant={pathname === item.href ? "default" : "ghost"}
                   className="h-12 w-full justify-start rounded-2xl px-4"
                 >
                   <Icon className="size-4" />
@@ -42,9 +53,9 @@ export function SidebarNav() {
         </div>
 
         <Card className="rounded-3xl border-sky-100 bg-sky-50 p-4 shadow-none">
-          <p className="text-sm font-semibold text-slate-900">Core frontend ready</p>
+          <p className="text-sm font-semibold text-slate-900">Role dashboard active</p>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            Tinggal lanjut ke auth flow, consume API, dan dashboard per role.
+            Sidebar sekarang menyesuaikan konteks role dari hasil login.
           </p>
         </Card>
       </Card>
