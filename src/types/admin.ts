@@ -70,7 +70,16 @@ export type AdminTeacherProfile = {
   gender?: string;
   phone?: string;
   address?: string;
-  status_kepegawaian?: string;
+  is_active: boolean;
+};
+
+export type AdminTeacherProfilePayload = {
+  user_id: string;
+  nip: string;
+  nuptk: string;
+  gender: string;
+  phone: string;
+  address: string;
   is_active: boolean;
 };
 
@@ -88,6 +97,14 @@ export type AdminTeacherSubjectAssignment = {
   is_active: boolean;
 };
 
+export type AdminTeacherSubjectAssignmentPayload = {
+  teacher_id: string;
+  subject_id: string;
+  class_id: string;
+  school_year_id: string;
+  is_active: boolean;
+};
+
 export type AdminHomeroomAssignment = {
   id: string;
   teacher_id: string;
@@ -96,5 +113,117 @@ export type AdminHomeroomAssignment = {
   class_name: string;
   school_year_id: string;
   school_year_name: string;
+  is_active: boolean;
+};
+
+export type AdminHomeroomAssignmentPayload = {
+  teacher_id: string;
+  class_id: string;
+  school_year_id: string;
+  is_active: boolean;
+};
+
+export type AdminSubject = {
+  id: string;
+  code: string;
+  name: string;
+  group?: string;
+  is_active: boolean;
+};
+
+export type AdminSchoolYear = {
+  id: string;
+  name: string;
+  start_year: number;
+  end_year: number;
+  is_active: boolean;
+};
+
+export type AdminClass = {
+  id: string;
+  grade: string;
+  name: string;
+  major_id: string;
+  major_code: string;
+  major_name: string;
+  school_year_id: string;
+  school_year_name: string;
+  display_name: string;
+  is_active: boolean;
+};
+
+export type AdminStudent = {
+  id: string;
+  user_id: string;
+  name: string;
+  nis: string;
+  nisn?: string;
+  gender?: string;
+  birth_place?: string;
+  birth_date?: string;
+  address?: string;
+  phone?: string;
+  parent_name?: string;
+  parent_phone?: string;
+  entry_year: number;
+  is_active: boolean;
+};
+
+export type AdminStudentPayload = {
+  name: string;
+  nis: string;
+  nisn: string;
+  password: string;
+  gender: string;
+  birth_place: string;
+  birth_date: string;
+  address: string;
+  phone: string;
+  parent_name: string;
+  parent_phone: string;
+  entry_year: number;
+  is_active: boolean;
+};
+
+export type AdminStudentClassMembership = {
+  id: string;
+  student_id: string;
+  student_name: string;
+  nis: string;
+  class_id: string;
+  class_name: string;
+  school_year_id: string;
+  school_year_name: string;
+  status: string;
+  joined_at?: string;
+  left_at?: string;
+  is_active: boolean;
+};
+
+export type AdminStudentClassMembershipPayload = {
+  student_id: string;
+  class_id: string;
+  school_year_id: string;
+  status: string;
+  joined_at: string;
+  left_at: string;
+  is_active: boolean;
+};
+
+export type AdminAttendanceRule = {
+  id: string;
+  school_year_id: string;
+  school_year: string;
+  check_in_start: string;
+  on_time_until: string;
+  late_until: string;
+  is_active: boolean;
+};
+
+export type AdminAttendanceRulePayload = {
+  school_year_id: string;
+  check_in_start: string;
+  on_time_until: string;
+  late_until: string;
   is_active: boolean;
 };

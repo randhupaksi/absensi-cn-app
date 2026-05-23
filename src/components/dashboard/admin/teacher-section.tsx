@@ -2,22 +2,53 @@
 
 import { EmptyState } from "@/components/dashboard/admin/empty-state";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { PremiumModal } from "@/components/ui/premium-modal";
+import { RadixSelectField } from "@/components/ui/radix-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  createAdminUser,
+  createAdminHomeroomAssignment,
+  createAdminTeacherProfile,
+  createAdminTeacherSubjectAssignment,
+  getAdminClasses,
+  getAdminSchoolYears,
+  getAdminSubjects,
+  getAdminUsers,
+} from "@/services/admin.service";
 import type {
+  AdminClass,
   AdminHomeroomAssignment,
+  AdminHomeroomAssignmentPayload,
+  AdminSchoolYear,
+  AdminSubject,
   AdminTeacherProfile,
+  AdminTeacherProfilePayload,
   AdminTeacherSubjectAssignment,
+  AdminTeacherSubjectAssignmentPayload,
+  AdminUser,
 } from "@/types/admin";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { LucideIcon } from "lucide-react";
 import {
+  ArrowUpRight,
+  BadgeCheck,
   BookOpen,
+  FilePenLine,
   GraduationCap,
+  IdCard,
+  LayoutPanelTop,
+  LineChart,
   Search,
   SlidersHorizontal,
+  Sparkles,
   UsersRound,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
 type TeacherSectionProps = {
   teacherProfiles: AdminTeacherProfile[];
@@ -27,7 +58,13 @@ type TeacherSectionProps = {
   errorMessage?: string;
 };
 
-const profileStatusOptions = ["Semua", "Aktif", "Nonaktif"];
+const profileStatusOptions = [
+  { value: "Semua", label: "Semua" },
+  { value: "Aktif", label: "Aktif" },
+  { value: "Nonaktif", label: "Nonaktif" },
+];
+
+type TeacherTab = "profiles" | "subjects" | "homerooms";
 
 export function TeacherSection({
   teacherProfiles,
@@ -36,8 +73,94 @@ export function TeacherSection({
   isLoading = false,
   errorMessage,
 }: TeacherSectionProps) {
+  const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("Semua");
+  const [activeTab, setActiveTab] = useState<TeacherTab>("profiles");
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [subjectModalOpen, setSubjectModalOpen] = useState(false);
+  const [homeroomModalOpen, setHomeroomModalOpen] = useState(false);
+
+  const usersQuery = useQuery({
+    queryKey: ["admin-users"],
+    queryFn: getAdminUsers,
+  });
+  const subjectsQuery = useQuery({
+    queryKey: ["admin-subjects"],
+    queryFn: getAdminSubjects,
+  });
+  const classesQuery = useQuery({
+    queryKey: ["admin-classes"],
+    queryFn: getAdminClasses,
+  });
+  const schoolYearsQuery = useQuery({
+    queryKey: ["admin-school-years"],
+    queryFn: getAdminSchoolYears,
+  });
+
+  const createTeacherProfileMutation = useMutation({
+    mutationFn: async (payload: TeacherProfileCreatePayload) => {
+      const account = await createAdminUser({
+        name: payload.name,
+        role: "TEACHER",
+        username: payload.username,
+        nis: "",
+        password: payload.password,
+      });
+
+      return createAdminTeacherProfile({
+        user_id: account.id,
+        nip: payload.nip,
+        nuptk: payload.nuptk,
+        gender: payload.gender,
+        phone: payload.phone,
+        address: payload.address,
+        is_active: payload.is_active,
+      });
+    },
+    onSuccess: () => {
+      toast.success("Akun dan profil guru baru berhasil ditambahkan.");
+      void queryClient.invalidateQueries({ queryKey: ["admin-teacher-profiles"] });
+      void queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      setProfileModalOpen(false);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const createTeacherSubjectAssignmentMutation = useMutation({
+    mutationFn: createAdminTeacherSubjectAssignment,
+    onSuccess: () => {
+      toast.success("Assignment mapel berhasil dibuat.");
+      void queryClient.invalidateQueries({
+        queryKey: ["admin-teacher-subject-assignments"],
+      });
+      setSubjectModalOpen(false);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const createHomeroomAssignmentMutation = useMutation({
+    mutationFn: createAdminHomeroomAssignment,
+    onSuccess: () => {
+      toast.success("Assignment wali kelas berhasil dibuat.");
+      void queryClient.invalidateQueries({
+        queryKey: ["admin-homeroom-assignments"],
+      });
+      setHomeroomModalOpen(false);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const teacherUsers = useMemo(
+    () => (usersQuery.data ?? []).filter((user) => user.role === "TEACHER"),
+    [usersQuery.data],
+  );
 
   const normalizedQuery = query.trim().toLowerCase();
 
@@ -75,8 +198,7 @@ export function TeacherSection({
       (teacher.username ?? "").toLowerCase().includes(normalizedQuery) ||
       (teacher.nip ?? "").toLowerCase().includes(normalizedQuery) ||
       (teacher.nuptk ?? "").toLowerCase().includes(normalizedQuery) ||
-      (teacher.phone ?? "").toLowerCase().includes(normalizedQuery) ||
-      (teacher.status_kepegawaian ?? "").toLowerCase().includes(normalizedQuery);
+      (teacher.phone ?? "").toLowerCase().includes(normalizedQuery);
 
     return matchesStatus && matchesQuery;
   });
@@ -104,351 +226,1024 @@ export function TeacherSection({
   ).length;
   const totalSubjectAssignments = teacherSubjectAssignments.length;
   const totalHomeroomAssignments = homeroomAssignments.length;
+  const activeSubjectAssignments = teacherSubjectAssignments.filter(
+    (assignment) => assignment.is_active,
+  ).length;
+  const activeHomeroomAssignments = homeroomAssignments.filter(
+    (assignment) => assignment.is_active,
+  ).length;
+
+  const kpiCards = useMemo(() => {
+    if (activeTab === "subjects") {
+      return [
+        {
+          label: "Total Assignment",
+          value: totalSubjectAssignments,
+          icon: BookOpen,
+          accentClass: "from-sky-500 via-cyan-500 to-emerald-500",
+        },
+        {
+          label: "Assignment Aktif",
+          value: activeSubjectAssignments,
+          icon: BadgeCheck,
+          accentClass: "from-emerald-500 via-teal-500 to-green-500",
+        },
+        {
+          label: "Guru Terlibat",
+          value: new Set(teacherSubjectAssignments.map((assignment) => assignment.teacher_id))
+            .size,
+          icon: UsersRound,
+          accentClass: "from-teal-500 via-emerald-500 to-lime-500",
+        },
+        {
+          label: "Kelas Terlayani",
+          value: new Set(teacherSubjectAssignments.map((assignment) => assignment.class_id))
+            .size,
+          icon: GraduationCap,
+          accentClass: "from-amber-400 via-orange-400 to-emerald-500",
+        },
+      ];
+    }
+
+    if (activeTab === "homerooms") {
+      return [
+        {
+          label: "Total Assignment",
+          value: totalHomeroomAssignments,
+          icon: GraduationCap,
+          accentClass: "from-amber-400 via-orange-400 to-emerald-500",
+        },
+        {
+          label: "Walas Aktif",
+          value: activeHomeroomAssignments,
+          icon: BadgeCheck,
+          accentClass: "from-emerald-500 via-teal-500 to-green-500",
+        },
+        {
+          label: "Guru Walas",
+          value: new Set(homeroomAssignments.map((assignment) => assignment.teacher_id)).size,
+          icon: UsersRound,
+          accentClass: "from-teal-500 via-emerald-500 to-lime-500",
+        },
+        {
+          label: "Kelas Berwali",
+          value: new Set(homeroomAssignments.map((assignment) => assignment.class_id)).size,
+          icon: BookOpen,
+          accentClass: "from-sky-500 via-cyan-500 to-emerald-500",
+        },
+      ];
+    }
+
+    return [
+      {
+        label: "Total Guru",
+        value: teacherProfiles.length,
+        icon: UsersRound,
+        accentClass: "from-emerald-500 via-teal-500 to-cyan-500",
+      },
+      {
+        label: "Guru Aktif",
+        value: activeTeacherCount,
+        icon: BadgeCheck,
+        accentClass: "from-emerald-500 via-teal-500 to-green-500",
+      },
+      {
+        label: "Punya NIP",
+        value: teacherProfiles.filter((teacher) => Boolean(teacher.nip?.trim())).length,
+        icon: IdCard,
+        accentClass: "from-teal-500 via-emerald-500 to-lime-500",
+      },
+      {
+        label: "Punya NUPTK",
+        value: teacherProfiles.filter((teacher) => Boolean(teacher.nuptk?.trim())).length,
+        icon: FilePenLine,
+        accentClass: "from-amber-400 via-orange-400 to-emerald-500",
+      },
+    ];
+  }, [
+    activeHomeroomAssignments,
+    activeSubjectAssignments,
+    activeTab,
+    activeTeacherCount,
+    homeroomAssignments,
+    teacherProfiles,
+    teacherSubjectAssignments,
+    totalHomeroomAssignments,
+    totalSubjectAssignments,
+  ]);
+
+  const addActionConfig = {
+    profiles: {
+      label: "Tambah Profil Guru",
+      icon: UsersRound,
+      onClick: () => setProfileModalOpen(true),
+    },
+    subjects: {
+      label: "Tambah Assignment Mapel",
+      icon: BookOpen,
+      onClick: () => setSubjectModalOpen(true),
+    },
+    homerooms: {
+      label: "Tambah Assignment Walas",
+      icon: GraduationCap,
+      onClick: () => setHomeroomModalOpen(true),
+    },
+  } satisfies Record<
+    TeacherTab,
+    { label: string; icon: LucideIcon; onClick: () => void }
+  >;
+
+  const activeAction = addActionConfig[activeTab];
 
   return (
-    <section
-      id="guru"
-      className="rounded-[28px] border border-white/70 bg-white/82 p-4 shadow-[0_24px_60px_rgba(28,77,61,0.08)] backdrop-blur-xl sm:p-5 lg:p-6"
-    >
-      <div className="flex flex-col gap-4 border-b border-slate-200/80 pb-4 sm:gap-5">
-        <div className="space-y-1">
-          <h2 className="text-[1.9rem] font-semibold tracking-tight text-slate-950">
-            Teacher Management
-          </h2>
-          <p className="text-base text-slate-600">
-            Profil guru, assignment mapel, dan penugasan wali kelas dari API admin.
-          </p>
-        </div>
+    <>
+      <section
+        id="guru"
+        className="relative overflow-hidden rounded-[30px] border border-white/75 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(250,253,252,0.94)_52%,rgba(245,252,249,0.96)_100%)] p-4 shadow-[0_28px_80px_rgba(28,77,61,0.1)] backdrop-blur-xl sm:p-5 lg:p-6"
+      >
+        <div className="pointer-events-none absolute right-[-80px] top-[-110px] h-56 w-56 rounded-full bg-emerald-200/30 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-[-90px] left-[12%] h-52 w-52 rounded-full bg-sky-200/20 blur-3xl" />
 
-        <div className="grid gap-3 md:grid-cols-3">
-          <StatCard
-            label="Total Guru"
-            value={teacherProfiles.length}
-            description={`${activeTeacherCount} guru aktif`}
-          />
-          <StatCard
-            label="Assignment Mapel"
-            value={totalSubjectAssignments}
-            description="Total relasi guru ke mapel dan kelas"
-          />
-          <StatCard
-            label="Assignment Walas"
-            value={totalHomeroomAssignments}
-            description="Total penugasan wali kelas aktif dan nonaktif"
-          />
-        </div>
+        <div className="relative flex flex-col gap-5 border-b border-slate-200/80 pb-5 sm:gap-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/70 bg-white/82 px-3.5 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-800 shadow-[0_10px_24px_rgba(16,185,129,0.08)]">
+                <LayoutPanelTop className="size-3.5" />
+                Teacher Workspace
+              </div>
 
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="hidden lg:block" />
-
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-            <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50/90 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
-              <span className="flex size-7 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm">
-                <SlidersHorizontal className="size-3.5" />
-              </span>
-              <div className="flex items-center gap-2 rounded-full bg-white px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
-                <Search className="size-4 text-slate-400" />
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Cari guru, mapel, kelas, NIP, NUPTK"
-                  className="w-full min-w-[180px] bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400 sm:min-w-[240px]"
-                />
+              <div className="space-y-2">
+                <h2 className="text-[2rem] font-semibold tracking-[-0.04em] text-slate-950 sm:text-[2.35rem]">
+                  Teacher Management
+                </h2>
+                <p className="max-w-2xl text-[15px] leading-7 text-slate-600 sm:text-base">
+                  Profil guru, assignment mapel, dan penugasan wali kelas dari API admin
+                  dengan tampilan kerja yang lebih rapi untuk operasional harian.
+                </p>
               </div>
             </div>
 
-            <div className="relative">
-              <select
-                value={statusFilter}
-                onChange={(event) => setStatusFilter(event.target.value)}
-                className="h-11 appearance-none rounded-full border border-slate-200 bg-slate-50/92 px-4 pr-10 text-sm text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] outline-none transition focus:border-emerald-200 focus:bg-white"
+            <div className="lg:w-[390px]">
+              <div className="flex items-center gap-3 rounded-[22px] border border-slate-200/75 bg-white/76 px-4 py-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+                <span className="flex size-11 items-center justify-center rounded-2xl bg-[linear-gradient(180deg,#effcf6_0%,#e0f7ee_100%)] text-emerald-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+                  <LineChart className="size-4.5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-800">
+                    Ringkasan kerja guru
+                  </p>
+                  <p className="text-xs leading-5 text-slate-500">
+                    Cari cepat profil, status aktif, mapel, atau kelas wali secara langsung.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-4">
+            {kpiCards.map((card) => (
+              <StatCard
+                key={card.label}
+                label={card.label}
+                value={card.value}
+                icon={card.icon}
+                accentClass={card.accentClass}
+              />
+            ))}
+          </div>
+
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="text-xs font-medium text-slate-400">
+              {activeTeacherCount} guru aktif
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+              <div className="flex items-center gap-2 rounded-[24px] border border-slate-200/80 bg-white/84 px-3 py-2 shadow-[0_14px_28px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.92)]">
+                <span className="flex size-9 items-center justify-center rounded-2xl bg-[linear-gradient(180deg,#ffffff_0%,#f4faf7_100%)] text-slate-400 shadow-[0_8px_18px_rgba(15,23,42,0.06)]">
+                  <SlidersHorizontal className="size-4" />
+                </span>
+                <div className="flex items-center gap-2 rounded-full bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)]">
+                  <Search className="size-4 text-slate-400" />
+                  <input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Cari guru, mapel, kelas, NIP, NUPTK"
+                    className="w-full min-w-[180px] bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400 sm:min-w-[240px]"
+                  />
+                </div>
+              </div>
+
+              <div className="w-full sm:w-[190px]">
+                <RadixSelectField
+                  value={statusFilter}
+                  onValueChange={setStatusFilter}
+                  placeholder="Pilih status"
+                  options={profileStatusOptions}
+                  triggerClassName="h-14 rounded-[22px] pl-4"
+                />
+              </div>
+
+              <Button
+                variant="outline"
+                className="h-14 rounded-[22px] border-emerald-200/80 bg-[linear-gradient(135deg,#123f36_0%,#115649_100%)] px-5 text-sm font-semibold text-white shadow-[0_18px_36px_rgba(17,86,73,0.22)] hover:border-emerald-200 hover:bg-[linear-gradient(135deg,#14483d_0%,#146756_100%)] hover:text-white"
+                onClick={activeAction.onClick}
               >
-                {profileStatusOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
+                <span className="flex size-8 items-center justify-center rounded-full bg-white/12">
+                  <activeAction.icon className="size-4" />
+                </span>
+                {activeAction.label}
+              </Button>
             </div>
           </div>
         </div>
-      </div>
 
-      {errorMessage ? (
-        <div className="mt-5">
-          <EmptyState
-            icon={UsersRound}
-            title="Data teacher belum bisa dimuat"
-            description={errorMessage}
-            compact
-          />
-        </div>
-      ) : null}
+        {errorMessage ? (
+          <div className="mt-5">
+            <EmptyState
+              icon={UsersRound}
+              title="Data teacher belum bisa dimuat"
+              description={errorMessage}
+              compact
+            />
+          </div>
+        ) : null}
 
-      <Tabs defaultValue="profiles" className="mt-5 gap-4">
-        <TabsList
-          variant="line"
-          className="w-full justify-start gap-2 overflow-x-auto rounded-[20px] bg-slate-100/70 p-1.5"
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as TeacherTab)}
+          className="mt-5 gap-4"
         >
-          <TabsTrigger
-            value="profiles"
-            className="rounded-2xl px-4 py-2 data-active:bg-white data-active:text-slate-950"
+          <TabsList
+            className="grid w-full grid-cols-1 gap-2 rounded-[24px] border border-emerald-100/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.9)_0%,rgba(242,250,246,0.92)_100%)] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_16px_30px_rgba(15,23,42,0.04)] sm:grid-cols-3"
           >
-            <UsersRound className="size-4" />
-            Profil Guru
-          </TabsTrigger>
-          <TabsTrigger
-            value="subjects"
-            className="rounded-2xl px-4 py-2 data-active:bg-white data-active:text-slate-950"
-          >
-            <BookOpen className="size-4" />
-            Assignment Mapel
-          </TabsTrigger>
-          <TabsTrigger
-            value="homerooms"
-            className="rounded-2xl px-4 py-2 data-active:bg-white data-active:text-slate-950"
-          >
-            <GraduationCap className="size-4" />
-            Assignment Walas
-          </TabsTrigger>
-        </TabsList>
+            <TabsTrigger
+              value="profiles"
+              className="w-full rounded-[18px] border border-transparent px-5 py-3 text-slate-500 transition-colors hover:border-emerald-100 hover:bg-white/80 hover:text-emerald-800 data-active:border-emerald-200 data-active:bg-[linear-gradient(135deg,rgba(255,255,255,0.98)_0%,rgba(236,253,245,0.98)_100%)] data-active:text-emerald-900 data-active:shadow-[0_14px_26px_rgba(16,185,129,0.12)]"
+            >
+              <UsersRound className="size-4" />
+              Profil Guru
+            </TabsTrigger>
+            <TabsTrigger
+              value="subjects"
+              className="w-full rounded-[18px] border border-transparent px-5 py-3 text-slate-500 transition-colors hover:border-emerald-100 hover:bg-white/80 hover:text-emerald-800 data-active:border-emerald-200 data-active:bg-[linear-gradient(135deg,rgba(255,255,255,0.98)_0%,rgba(236,253,245,0.98)_100%)] data-active:text-emerald-900 data-active:shadow-[0_14px_26px_rgba(16,185,129,0.12)]"
+            >
+              <BookOpen className="size-4" />
+              Assignment Mapel
+            </TabsTrigger>
+            <TabsTrigger
+              value="homerooms"
+              className="w-full rounded-[18px] border border-transparent px-5 py-3 text-slate-500 transition-colors hover:border-emerald-100 hover:bg-white/80 hover:text-emerald-800 data-active:border-emerald-200 data-active:bg-[linear-gradient(135deg,rgba(255,255,255,0.98)_0%,rgba(236,253,245,0.98)_100%)] data-active:text-emerald-900 data-active:shadow-[0_14px_26px_rgba(16,185,129,0.12)]"
+            >
+              <GraduationCap className="size-4" />
+              Assignment Walas
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="profiles">
-          <DataTableCard
-            isLoading={isLoading}
-            columnCount={8}
-            emptyTitle="Belum ada profil guru"
-            emptyDescription="Tambahkan akun dengan role TEACHER lalu buat teacher profile agar data muncul di sini."
-            icon={UsersRound}
-          >
-            <table className="min-w-full border-separate border-spacing-0 text-left">
-              <thead>
-                <tr className="bg-[#eef8ff] text-sm text-slate-700">
-                  {[
-                    "Guru",
-                    "Username",
-                    "NIP / NUPTK",
-                    "Kontak",
-                    "Kepegawaian",
-                    "Mapel",
-                    "Walas",
-                    "Status",
-                  ].map((label) => (
-                    <th
-                      key={label}
-                      className="border-b border-sky-100/90 px-4 py-4 font-medium first:rounded-tl-[24px] last:rounded-tr-[24px]"
-                    >
-                      {label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {!isLoading && filteredTeacherProfiles.length === 0 ? (
-                  <EmptyRow
-                    colSpan={8}
-                    icon={UsersRound}
-                    title="Profil guru tidak ditemukan"
-                    description="Coba ubah pencarian atau filter status guru."
-                  />
-                ) : (
-                  filteredTeacherProfiles.map((teacher) => (
-                    <tr
-                      key={teacher.id}
-                      className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30"
-                    >
-                      <td className="border-t border-slate-100 px-4 py-4">
-                        <div className="flex items-center gap-3">
-                          <span className="flex size-9 items-center justify-center rounded-full bg-[linear-gradient(180deg,#fef7ec_0%,#ecfdf5_100%)] text-xs font-semibold text-emerald-700 shadow-[0_8px_20px_rgba(22,85,58,0.08)]">
-                            {getInitials(teacher.name)}
-                          </span>
-                          <div>
-                            <p className="font-medium text-slate-700">
-                              {teacher.name}
-                            </p>
+          <TabsContent value="profiles">
+            <DataTableCard
+              isLoading={isLoading}
+              columnCount={7}
+              emptyTitle="Belum ada profil guru"
+              emptyDescription="Tambahkan akun dengan role TEACHER lalu buat teacher profile agar data muncul di sini."
+              icon={UsersRound}
+            >
+              <table className="min-w-full border-separate border-spacing-0 text-left">
+                <thead>
+                  <tr className="bg-[#eef8ff] text-sm text-slate-700">
+                    {[
+                      "Guru",
+                      "Username",
+                      "NIP / NUPTK",
+                      "Kontak",
+                      "Mapel",
+                      "Walas",
+                      "Status",
+                    ].map((label) => (
+                      <th
+                        key={label}
+                        className="border-b border-sky-100/90 px-4 py-4 font-medium first:rounded-tl-[24px] last:rounded-tr-[24px]"
+                      >
+                        {label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {!isLoading && filteredTeacherProfiles.length === 0 ? (
+                    <EmptyRow
+                      colSpan={7}
+                      icon={UsersRound}
+                      title="Profil guru tidak ditemukan"
+                      description="Coba ubah pencarian atau filter status guru."
+                    />
+                  ) : (
+                    filteredTeacherProfiles.map((teacher) => (
+                      <tr
+                        key={teacher.id}
+                        className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30"
+                      >
+                        <td className="border-t border-slate-100 px-4 py-4">
+                          <div className="flex items-center gap-3">
+                            <span className="flex size-9 items-center justify-center rounded-full bg-[linear-gradient(180deg,#fef7ec_0%,#ecfdf5_100%)] text-xs font-semibold text-emerald-700 shadow-[0_8px_20px_rgba(22,85,58,0.08)]">
+                              {getInitials(teacher.name)}
+                            </span>
+                            <div>
+                              <p className="font-medium text-slate-700">
+                                {teacher.name}
+                              </p>
+                              <p className="text-xs text-slate-400">
+                                {teacher.user_id}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="border-t border-slate-100 px-4 py-4">
+                          {teacher.username || "-"}
+                        </td>
+                        <td className="border-t border-slate-100 px-4 py-4">
+                          <div className="space-y-1">
+                            <p>{teacher.nip || "-"}</p>
                             <p className="text-xs text-slate-400">
-                              {teacher.user_id}
+                              NUPTK: {teacher.nuptk || "-"}
                             </p>
                           </div>
-                        </div>
-                      </td>
-                      <td className="border-t border-slate-100 px-4 py-4">
-                        {teacher.username || "-"}
-                      </td>
-                      <td className="border-t border-slate-100 px-4 py-4">
-                        <div className="space-y-1">
-                          <p>{teacher.nip || "-"}</p>
-                          <p className="text-xs text-slate-400">
-                            NUPTK: {teacher.nuptk || "-"}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="border-t border-slate-100 px-4 py-4">
-                        <div className="space-y-1">
-                          <p>{teacher.phone || "-"}</p>
-                          <p className="text-xs text-slate-400">
-                            {teacher.gender || "-"}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="border-t border-slate-100 px-4 py-4">
-                        {teacher.status_kepegawaian || "-"}
-                      </td>
-                      <td className="border-t border-slate-100 px-4 py-4">
-                        {subjectAssignmentsByTeacher[teacher.id] ?? 0}
-                      </td>
-                      <td className="border-t border-slate-100 px-4 py-4">
-                        {homeroomAssignmentsByTeacher[teacher.id] ?? 0}
-                      </td>
-                      <td className="border-t border-slate-100 px-4 py-4">
-                        <StatusBadge isActive={teacher.is_active} />
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </DataTableCard>
-        </TabsContent>
+                        </td>
+                        <td className="border-t border-slate-100 px-4 py-4">
+                          <div className="space-y-1">
+                            <p>{teacher.phone || "-"}</p>
+                            <p className="text-xs text-slate-400">
+                              {teacher.gender || "-"}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="border-t border-slate-100 px-4 py-4">
+                          {subjectAssignmentsByTeacher[teacher.id] ?? 0}
+                        </td>
+                        <td className="border-t border-slate-100 px-4 py-4">
+                          {homeroomAssignmentsByTeacher[teacher.id] ?? 0}
+                        </td>
+                        <td className="border-t border-slate-100 px-4 py-4">
+                          <StatusBadge isActive={teacher.is_active} />
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </DataTableCard>
+          </TabsContent>
 
-        <TabsContent value="subjects">
-          <DataTableCard
-            isLoading={isLoading}
-            columnCount={6}
-            emptyTitle="Belum ada assignment mapel"
-            emptyDescription="Relasi guru ke mapel dan kelas per tahun ajaran akan tampil di tabel ini."
-            icon={BookOpen}
-          >
-            <table className="min-w-full border-separate border-spacing-0 text-left">
-              <thead>
-                <tr className="bg-[#eef8ff] text-sm text-slate-700">
-                  {[
-                    "Guru",
-                    "Mapel",
-                    "Kelas",
-                    "Tahun Ajaran",
-                    "Status",
-                    "ID Assignment",
-                  ].map((label) => (
-                    <th
-                      key={label}
-                      className="border-b border-sky-100/90 px-4 py-4 font-medium first:rounded-tl-[24px] last:rounded-tr-[24px]"
-                    >
-                      {label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {!isLoading && filteredTeacherSubjectAssignments.length === 0 ? (
-                  <EmptyRow
-                    colSpan={6}
-                    icon={BookOpen}
-                    title="Assignment mapel tidak ditemukan"
-                    description="Belum ada data yang cocok dengan pencarian saat ini."
-                  />
-                ) : (
-                  filteredTeacherSubjectAssignments.map((assignment) => (
-                    <tr
-                      key={assignment.id}
-                      className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30"
-                    >
-                      <td className="border-t border-slate-100 px-4 py-4 font-medium text-slate-700">
-                        {assignment.teacher_name}
-                      </td>
-                      <td className="border-t border-slate-100 px-4 py-4">
-                        <div className="space-y-1">
-                          <p>{assignment.subject_name}</p>
-                          <p className="text-xs text-slate-400">
-                            {assignment.subject_code}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="border-t border-slate-100 px-4 py-4">
-                        {assignment.class_name}
-                      </td>
-                      <td className="border-t border-slate-100 px-4 py-4">
-                        {assignment.school_year_name}
-                      </td>
-                      <td className="border-t border-slate-100 px-4 py-4">
-                        <StatusBadge isActive={assignment.is_active} />
-                      </td>
-                      <td className="border-t border-slate-100 px-4 py-4 text-xs text-slate-400">
-                        {assignment.id}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </DataTableCard>
-        </TabsContent>
+          <TabsContent value="subjects">
+            <DataTableCard
+              isLoading={isLoading}
+              columnCount={6}
+              emptyTitle="Belum ada assignment mapel"
+              emptyDescription="Relasi guru ke mapel dan kelas per tahun ajaran akan tampil di tabel ini."
+              icon={BookOpen}
+            >
+              <table className="min-w-full border-separate border-spacing-0 text-left">
+                <thead>
+                  <tr className="bg-[#eef8ff] text-sm text-slate-700">
+                    {[
+                      "Guru",
+                      "Mapel",
+                      "Kelas",
+                      "Tahun Ajaran",
+                      "Status",
+                      "ID Assignment",
+                    ].map((label) => (
+                      <th
+                        key={label}
+                        className="border-b border-sky-100/90 px-4 py-4 font-medium first:rounded-tl-[24px] last:rounded-tr-[24px]"
+                      >
+                        {label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {!isLoading && filteredTeacherSubjectAssignments.length === 0 ? (
+                    <EmptyRow
+                      colSpan={6}
+                      icon={BookOpen}
+                      title="Assignment mapel tidak ditemukan"
+                      description="Belum ada data yang cocok dengan pencarian saat ini."
+                    />
+                  ) : (
+                    filteredTeacherSubjectAssignments.map((assignment) => (
+                      <tr
+                        key={assignment.id}
+                        className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30"
+                      >
+                        <td className="border-t border-slate-100 px-4 py-4 font-medium text-slate-700">
+                          {assignment.teacher_name}
+                        </td>
+                        <td className="border-t border-slate-100 px-4 py-4">
+                          <div className="space-y-1">
+                            <p>{assignment.subject_name}</p>
+                            <p className="text-xs text-slate-400">
+                              {assignment.subject_code}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="border-t border-slate-100 px-4 py-4">
+                          {assignment.class_name}
+                        </td>
+                        <td className="border-t border-slate-100 px-4 py-4">
+                          {assignment.school_year_name}
+                        </td>
+                        <td className="border-t border-slate-100 px-4 py-4">
+                          <StatusBadge isActive={assignment.is_active} />
+                        </td>
+                        <td className="border-t border-slate-100 px-4 py-4 text-xs text-slate-400">
+                          {assignment.id}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </DataTableCard>
+          </TabsContent>
 
-        <TabsContent value="homerooms">
-          <DataTableCard
-            isLoading={isLoading}
-            columnCount={5}
-            emptyTitle="Belum ada assignment walas"
-            emptyDescription="Data wali kelas per tahun ajaran akan tampil di sini."
-            icon={GraduationCap}
-          >
-            <table className="min-w-full border-separate border-spacing-0 text-left">
-              <thead>
-                <tr className="bg-[#eef8ff] text-sm text-slate-700">
-                  {[
-                    "Guru",
-                    "Kelas",
-                    "Tahun Ajaran",
-                    "Status",
-                    "ID Assignment",
-                  ].map((label) => (
-                    <th
-                      key={label}
-                      className="border-b border-sky-100/90 px-4 py-4 font-medium first:rounded-tl-[24px] last:rounded-tr-[24px]"
-                    >
-                      {label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {!isLoading && filteredHomeroomAssignments.length === 0 ? (
-                  <EmptyRow
-                    colSpan={5}
-                    icon={GraduationCap}
-                    title="Assignment walas tidak ditemukan"
-                    description="Belum ada data yang cocok dengan pencarian saat ini."
-                  />
-                ) : (
-                  filteredHomeroomAssignments.map((assignment) => (
-                    <tr
-                      key={assignment.id}
-                      className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30"
-                    >
-                      <td className="border-t border-slate-100 px-4 py-4 font-medium text-slate-700">
-                        {assignment.teacher_name}
-                      </td>
-                      <td className="border-t border-slate-100 px-4 py-4">
-                        {assignment.class_name}
-                      </td>
-                      <td className="border-t border-slate-100 px-4 py-4">
-                        {assignment.school_year_name}
-                      </td>
-                      <td className="border-t border-slate-100 px-4 py-4">
-                        <StatusBadge isActive={assignment.is_active} />
-                      </td>
-                      <td className="border-t border-slate-100 px-4 py-4 text-xs text-slate-400">
-                        {assignment.id}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </DataTableCard>
-        </TabsContent>
-      </Tabs>
-    </section>
+          <TabsContent value="homerooms">
+            <DataTableCard
+              isLoading={isLoading}
+              columnCount={5}
+              emptyTitle="Belum ada assignment walas"
+              emptyDescription="Data wali kelas per tahun ajaran akan tampil di sini."
+              icon={GraduationCap}
+            >
+              <table className="min-w-full border-separate border-spacing-0 text-left">
+                <thead>
+                  <tr className="bg-[#eef8ff] text-sm text-slate-700">
+                    {[
+                      "Guru",
+                      "Kelas",
+                      "Tahun Ajaran",
+                      "Status",
+                      "ID Assignment",
+                    ].map((label) => (
+                      <th
+                        key={label}
+                        className="border-b border-sky-100/90 px-4 py-4 font-medium first:rounded-tl-[24px] last:rounded-tr-[24px]"
+                      >
+                        {label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {!isLoading && filteredHomeroomAssignments.length === 0 ? (
+                    <EmptyRow
+                      colSpan={5}
+                      icon={GraduationCap}
+                      title="Assignment walas tidak ditemukan"
+                      description="Belum ada data yang cocok dengan pencarian saat ini."
+                    />
+                  ) : (
+                    filteredHomeroomAssignments.map((assignment) => (
+                      <tr
+                        key={assignment.id}
+                        className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30"
+                      >
+                        <td className="border-t border-slate-100 px-4 py-4 font-medium text-slate-700">
+                          {assignment.teacher_name}
+                        </td>
+                        <td className="border-t border-slate-100 px-4 py-4">
+                          {assignment.class_name}
+                        </td>
+                        <td className="border-t border-slate-100 px-4 py-4">
+                          {assignment.school_year_name}
+                        </td>
+                        <td className="border-t border-slate-100 px-4 py-4">
+                          <StatusBadge isActive={assignment.is_active} />
+                        </td>
+                        <td className="border-t border-slate-100 px-4 py-4 text-xs text-slate-400">
+                          {assignment.id}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </DataTableCard>
+          </TabsContent>
+        </Tabs>
+      </section>
+
+      <TeacherProfileCreateModal
+        open={profileModalOpen}
+        onOpenChange={setProfileModalOpen}
+        isPending={createTeacherProfileMutation.isPending}
+        onSubmit={(payload) => createTeacherProfileMutation.mutate(payload)}
+      />
+
+      <TeacherSubjectAssignmentCreateModal
+        open={subjectModalOpen}
+        onOpenChange={setSubjectModalOpen}
+        teacherProfiles={teacherProfiles}
+        subjects={subjectsQuery.data ?? []}
+        classes={classesQuery.data ?? []}
+        schoolYears={schoolYearsQuery.data ?? []}
+        isPending={createTeacherSubjectAssignmentMutation.isPending}
+        onSubmit={(payload) => createTeacherSubjectAssignmentMutation.mutate(payload)}
+      />
+
+      <HomeroomAssignmentCreateModal
+        open={homeroomModalOpen}
+        onOpenChange={setHomeroomModalOpen}
+        teacherProfiles={teacherProfiles}
+        classes={classesQuery.data ?? []}
+        schoolYears={schoolYearsQuery.data ?? []}
+        isPending={createHomeroomAssignmentMutation.isPending}
+        onSubmit={(payload) => createHomeroomAssignmentMutation.mutate(payload)}
+      />
+    </>
+  );
+}
+
+function TeacherProfileCreateModal({
+  open,
+  onOpenChange,
+  isPending,
+  onSubmit,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  isPending: boolean;
+  onSubmit: (payload: TeacherProfileCreatePayload) => void;
+}) {
+  const [form, setForm] = useState<TeacherProfileCreatePayload>({
+    name: "",
+    username: "",
+    password: "",
+    nip: "",
+    nuptk: "",
+    gender: "",
+    phone: "",
+    address: "",
+    is_active: true,
+  });
+
+  const reset = () =>
+    setForm({
+      name: "",
+      username: "",
+      password: "",
+      nip: "",
+      nuptk: "",
+      gender: "",
+      phone: "",
+      address: "",
+      is_active: true,
+    });
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    onOpenChange(nextOpen);
+    if (!nextOpen) {
+      reset();
+    }
+  };
+
+  return (
+    <PremiumModal
+      open={open}
+      onOpenChange={handleOpenChange}
+      title="Tambah Profil Guru"
+      description="Lengkapi data profil guru tanpa berpindah ke halaman lain."
+      icon={FilePenLine}
+    >
+      <div className="grid gap-5">
+        <div className="grid gap-4 md:grid-cols-2">
+          <FieldGroup label="Nama Guru">
+            <Input
+              value={form.name}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, name: event.target.value }))
+              }
+              placeholder="Masukkan nama guru"
+              className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]"
+            />
+          </FieldGroup>
+          <FieldGroup label="Username Login">
+            <Input
+              value={form.username}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, username: event.target.value }))
+              }
+              placeholder="Masukkan username guru"
+              className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]"
+            />
+          </FieldGroup>
+        </div>
+
+        <FieldGroup label="Password Login">
+          <Input
+            value={form.password}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, password: event.target.value }))
+            }
+            placeholder="Minimal 6 karakter"
+            className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]"
+          />
+        </FieldGroup>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <FieldGroup label="NIP">
+            <Input
+              value={form.nip}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, nip: event.target.value }))
+              }
+              placeholder="Masukkan NIP guru"
+              className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]"
+            />
+          </FieldGroup>
+          <FieldGroup label="NUPTK">
+            <Input
+              value={form.nuptk}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, nuptk: event.target.value }))
+              }
+              placeholder="Masukkan NUPTK guru"
+              className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]"
+            />
+          </FieldGroup>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <FieldGroup label="Jenis Kelamin">
+            <RadixSelectField
+              value={form.gender}
+              onValueChange={(value) => setForm((current) => ({ ...current, gender: value }))}
+              placeholder="Pilih jenis kelamin"
+              options={[
+                { value: "MALE", label: "Laki-laki" },
+                { value: "FEMALE", label: "Perempuan" },
+              ]}
+            />
+          </FieldGroup>
+          <FieldGroup label="Status Aktif">
+            <RadixSelectField
+              value={String(form.is_active)}
+              onValueChange={(value) =>
+                setForm((current) => ({ ...current, is_active: value === "true" }))
+              }
+              placeholder="Pilih status aktif"
+              options={[
+                { value: "true", label: "Aktif" },
+                { value: "false", label: "Nonaktif" },
+              ]}
+            />
+          </FieldGroup>
+        </div>
+
+        <div className="grid gap-4">
+          <FieldGroup label="Telepon">
+            <Input
+              value={form.phone}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, phone: event.target.value }))
+              }
+              placeholder="08xxxxxxxxxx"
+              className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]"
+            />
+          </FieldGroup>
+        </div>
+
+        <FieldGroup
+          label="Alamat"
+          helper="Gunakan alamat singkat yang mudah dibaca admin untuk kebutuhan data master."
+        >
+          <Textarea
+            value={form.address}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, address: event.target.value }))
+            }
+            placeholder="Masukkan alamat guru"
+            className="min-h-[140px] rounded-[1.4rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 py-3 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]"
+          />
+        </FieldGroup>
+
+        <ModalActions
+          isPending={isPending}
+          onCancel={() => handleOpenChange(false)}
+          onSubmit={() => onSubmit(form)}
+          submitLabel="Simpan Profil Guru"
+        />
+      </div>
+    </PremiumModal>
+  );
+}
+
+function TeacherSubjectAssignmentCreateModal({
+  open,
+  onOpenChange,
+  teacherProfiles,
+  subjects,
+  classes,
+  schoolYears,
+  isPending,
+  onSubmit,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  teacherProfiles: AdminTeacherProfile[];
+  subjects: AdminSubject[];
+  classes: AdminClass[];
+  schoolYears: AdminSchoolYear[];
+  isPending: boolean;
+  onSubmit: (payload: AdminTeacherSubjectAssignmentPayload) => void;
+}) {
+  const [form, setForm] = useState<AdminTeacherSubjectAssignmentPayload>({
+    teacher_id: "",
+    subject_id: "",
+    class_id: "",
+    school_year_id: "",
+    is_active: true,
+  });
+
+  const reset = () =>
+    setForm({
+      teacher_id: "",
+      subject_id: "",
+      class_id: "",
+      school_year_id: "",
+      is_active: true,
+    });
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    onOpenChange(nextOpen);
+    if (!nextOpen) {
+      reset();
+    }
+  };
+
+  return (
+    <PremiumModal
+      open={open}
+      onOpenChange={handleOpenChange}
+      title="Tambah Assignment Mapel"
+      description="Buat relasi guru ke mapel dan kelas untuk tahun ajaran yang relevan."
+      icon={BookOpen}
+    >
+      <div className="grid gap-5">
+        <div className="grid gap-4 md:grid-cols-2">
+          <FieldGroup label="Guru">
+            <RadixSelectField
+              value={form.teacher_id}
+              onValueChange={(value) =>
+                setForm((current) => ({ ...current, teacher_id: value }))
+              }
+              placeholder="Pilih guru"
+              options={teacherProfiles.map((teacher) => ({
+                value: teacher.id,
+                label: teacher.name,
+                description: teacher.nip || teacher.username || teacher.id,
+              }))}
+            />
+          </FieldGroup>
+          <FieldGroup label="Mapel">
+            <RadixSelectField
+              value={form.subject_id}
+              onValueChange={(value) =>
+                setForm((current) => ({ ...current, subject_id: value }))
+              }
+              placeholder="Pilih mapel"
+              options={subjects.map((subject) => ({
+                value: subject.id,
+                label: subject.name,
+                description: subject.code,
+              }))}
+            />
+          </FieldGroup>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <FieldGroup label="Kelas">
+            <RadixSelectField
+              value={form.class_id}
+              onValueChange={(value) =>
+                setForm((current) => ({ ...current, class_id: value }))
+              }
+              placeholder="Pilih kelas"
+              options={classes.map((item) => ({
+                value: item.id,
+                label: item.display_name,
+                description: item.school_year_name,
+              }))}
+            />
+          </FieldGroup>
+          <FieldGroup label="Tahun Ajaran">
+            <RadixSelectField
+              value={form.school_year_id}
+              onValueChange={(value) =>
+                setForm((current) => ({ ...current, school_year_id: value }))
+              }
+              placeholder="Pilih tahun ajaran"
+              options={schoolYears.map((item) => ({
+                value: item.id,
+                label: item.name,
+                description: `${item.start_year} - ${item.end_year}`,
+              }))}
+            />
+          </FieldGroup>
+        </div>
+
+        <FieldGroup label="Status Assignment">
+          <RadixSelectField
+            value={String(form.is_active)}
+            onValueChange={(value) =>
+              setForm((current) => ({ ...current, is_active: value === "true" }))
+            }
+            placeholder="Pilih status"
+            options={[
+              { value: "true", label: "Aktif" },
+              { value: "false", label: "Nonaktif" },
+            ]}
+          />
+        </FieldGroup>
+
+        <ModalActions
+          isPending={isPending}
+          onCancel={() => handleOpenChange(false)}
+          onSubmit={() => onSubmit(form)}
+          submitLabel="Simpan Assignment Mapel"
+        />
+      </div>
+    </PremiumModal>
+  );
+}
+
+function HomeroomAssignmentCreateModal({
+  open,
+  onOpenChange,
+  teacherProfiles,
+  classes,
+  schoolYears,
+  isPending,
+  onSubmit,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  teacherProfiles: AdminTeacherProfile[];
+  classes: AdminClass[];
+  schoolYears: AdminSchoolYear[];
+  isPending: boolean;
+  onSubmit: (payload: AdminHomeroomAssignmentPayload) => void;
+}) {
+  const [form, setForm] = useState<AdminHomeroomAssignmentPayload>({
+    teacher_id: "",
+    class_id: "",
+    school_year_id: "",
+    is_active: true,
+  });
+
+  const reset = () =>
+    setForm({
+      teacher_id: "",
+      class_id: "",
+      school_year_id: "",
+      is_active: true,
+    });
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    onOpenChange(nextOpen);
+    if (!nextOpen) {
+      reset();
+    }
+  };
+
+  return (
+    <PremiumModal
+      open={open}
+      onOpenChange={handleOpenChange}
+      title="Tambah Assignment Walas"
+      description="Tentukan guru yang menjadi wali kelas untuk rombel dan tahun ajaran tertentu."
+      icon={GraduationCap}
+    >
+      <div className="grid gap-5">
+        <div className="grid gap-4 md:grid-cols-2">
+          <FieldGroup label="Guru">
+            <RadixSelectField
+              value={form.teacher_id}
+              onValueChange={(value) =>
+                setForm((current) => ({ ...current, teacher_id: value }))
+              }
+              placeholder="Pilih guru"
+              options={teacherProfiles.map((teacher) => ({
+                value: teacher.id,
+                label: teacher.name,
+                description: teacher.nip || teacher.username || teacher.id,
+              }))}
+            />
+          </FieldGroup>
+          <FieldGroup label="Kelas">
+            <RadixSelectField
+              value={form.class_id}
+              onValueChange={(value) =>
+                setForm((current) => ({ ...current, class_id: value }))
+              }
+              placeholder="Pilih kelas walas"
+              options={classes.map((item) => ({
+                value: item.id,
+                label: item.display_name,
+                description: item.school_year_name,
+              }))}
+            />
+          </FieldGroup>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <FieldGroup label="Tahun Ajaran">
+            <RadixSelectField
+              value={form.school_year_id}
+              onValueChange={(value) =>
+                setForm((current) => ({ ...current, school_year_id: value }))
+              }
+              placeholder="Pilih tahun ajaran"
+              options={schoolYears.map((item) => ({
+                value: item.id,
+                label: item.name,
+                description: `${item.start_year} - ${item.end_year}`,
+              }))}
+            />
+          </FieldGroup>
+          <FieldGroup label="Status Assignment">
+            <RadixSelectField
+              value={String(form.is_active)}
+              onValueChange={(value) =>
+                setForm((current) => ({ ...current, is_active: value === "true" }))
+              }
+              placeholder="Pilih status"
+              options={[
+                { value: "true", label: "Aktif" },
+                { value: "false", label: "Nonaktif" },
+              ]}
+            />
+          </FieldGroup>
+        </div>
+
+        <ModalActions
+          isPending={isPending}
+          onCancel={() => handleOpenChange(false)}
+          onSubmit={() => onSubmit(form)}
+          submitLabel="Simpan Assignment Walas"
+        />
+      </div>
+    </PremiumModal>
+  );
+}
+
+function ModalActions({
+  isPending,
+  onCancel,
+  onSubmit,
+  submitLabel,
+}: {
+  isPending: boolean;
+  onCancel: () => void;
+  onSubmit: () => void;
+  submitLabel: string;
+}) {
+  return (
+    <div className="ui-modal-actions">
+      <Button
+        variant="outline"
+        className="h-12 rounded-[1.1rem] border-slate-200 px-5 text-sm font-semibold text-slate-600"
+        onClick={onCancel}
+        disabled={isPending}
+      >
+        Batal
+      </Button>
+      <Button
+        className="h-12 rounded-[1.1rem] bg-[linear-gradient(135deg,#0f766e_0%,#166534_100%)] px-5 text-sm font-semibold text-white shadow-[0_20px_40px_rgba(22,101,52,0.2)] hover:opacity-95"
+        onClick={onSubmit}
+        disabled={isPending}
+      >
+        <Sparkles className="size-4" />
+        {isPending ? "Menyimpan..." : submitLabel}
+      </Button>
+    </div>
+  );
+}
+
+function FieldGroup({
+  label,
+  helper,
+  children,
+}: {
+  label: string;
+  helper?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="ui-modal-field">
+      <label className="ui-modal-label">{label}</label>
+      {helper ? <p className="ui-modal-helper">{helper}</p> : null}
+      {children}
+    </div>
   );
 }
 
@@ -470,11 +1265,7 @@ function DataTableCard({
   return (
     <div className="overflow-hidden rounded-[24px] border border-sky-100/80">
       <div className="overflow-x-auto">
-        {isLoading ? (
-          <LoadingTable columnCount={columnCount} />
-        ) : (
-          children
-        )}
+        {isLoading ? <LoadingTable columnCount={columnCount} /> : children}
       </div>
       {!isLoading && columnCount === 0 ? (
         <div className="p-5">
@@ -539,19 +1330,39 @@ function EmptyRow({
 function StatCard({
   label,
   value,
-  description,
+  icon: Icon,
+  accentClass,
 }: {
   label: string;
   value: number;
-  description: string;
+  icon: LucideIcon;
+  accentClass: string;
 }) {
   return (
-    <div className="rounded-[24px] border border-emerald-100/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(240,253,250,0.92)_100%)] p-4 shadow-[0_16px_32px_rgba(16,185,129,0.06)]">
-      <p className="text-sm font-medium text-slate-500">{label}</p>
-      <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-        {value}
-      </p>
-      <p className="mt-1 text-sm text-slate-500">{description}</p>
+    <div className="group relative overflow-hidden rounded-[26px] border border-white/75 bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(244,252,248,0.96)_100%)] p-4 shadow-[0_18px_34px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_54px_rgba(15,23,42,0.1)]">
+      <div className="absolute right-[-10px] top-[-26px] h-24 w-24 rounded-full bg-emerald-100/40 blur-2xl transition duration-300 group-hover:scale-110" />
+      <div className="relative flex items-start justify-between gap-4">
+        <div className="space-y-2">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+            {label}
+          </p>
+          <p className="text-[2.15rem] font-semibold tracking-[-0.04em] text-slate-950">
+            {value}
+          </p>
+        </div>
+
+        <div className="flex flex-col items-center gap-2 text-right">
+          <span
+            className={`inline-flex size-12 items-center justify-center rounded-[18px] bg-gradient-to-br ${accentClass} text-white shadow-[0_14px_28px_rgba(15,23,42,0.16)]`}
+          >
+            <Icon className="size-5" />
+          </span>
+          <div className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50/80 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+            Live
+            <ArrowUpRight className="size-3.5" />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -570,6 +1381,18 @@ function StatusBadge({ isActive }: { isActive: boolean }) {
     </Badge>
   );
 }
+
+type TeacherProfileCreatePayload = {
+  name: string;
+  username: string;
+  password: string;
+  nip: string;
+  nuptk: string;
+  gender: string;
+  phone: string;
+  address: string;
+  is_active: boolean;
+};
 
 function getInitials(name: string) {
   const words = name.trim().split(/\s+/).filter(Boolean);

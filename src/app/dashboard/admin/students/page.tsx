@@ -1,11 +1,5 @@
-import { AdminPlaceholderPage } from "@/components/dashboard/admin-placeholder-page";
+import { AdminStudentsPage } from "@/components/dashboard/admin-students-page";
 
 export default function AdminStudentsRoute() {
-  return (
-    <AdminPlaceholderPage
-      title="Students"
-      subtitle="Data siswa sekolah"
-      description="Halaman siswa akan menampilkan data siswa, status aktif, dan kebutuhan administrasi lainnya setelah section ini selesai dibuat."
-    />
-  );
+  return <AdminStudentsPage />;
 }

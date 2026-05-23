@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   LogOut,
   ShieldCheck,
+  UserCog,
   Users,
 } from "lucide-react";
 
@@ -121,6 +122,7 @@ export const adminSidebarItems = [
   { label: "Dashboard", href: "/dashboard/admin", icon: LayoutDashboard },
   { label: "Guru", href: "/dashboard/admin/teachers", icon: GraduationCap },
   { label: "Siswa", href: "/dashboard/admin/students", icon: Users },
-  { label: "Admin", href: "/dashboard/admin/users", icon: ShieldCheck },
+  { label: "Admin", href: "/dashboard/admin/admins", icon: ShieldCheck },
+  { label: "Role Management", href: "/dashboard/admin/users", icon: UserCog },
   { label: "Laporan", href: "/dashboard/admin/reports", icon: BookOpenCheck },
 ] satisfies SidebarItem[];

@@ -1,10 +1,22 @@
 import { apiClient } from "@/services/api/client";
 import type {
+  AdminClass,
+  AdminAttendanceRule,
+  AdminAttendanceRulePayload,
   AdminDashboardData,
   AdminHomeroomAssignment,
+  AdminHomeroomAssignmentPayload,
+  AdminSchoolYear,
+  AdminStudent,
+  AdminStudentClassMembership,
+  AdminStudentClassMembershipPayload,
+  AdminStudentPayload,
+  AdminSubject,
   AdminTeacherDirectory,
   AdminTeacherProfile,
+  AdminTeacherProfilePayload,
   AdminTeacherSubjectAssignment,
+  AdminTeacherSubjectAssignmentPayload,
   AdminUser,
   AdminUserPayload,
 } from "@/types/admin";
@@ -90,10 +102,156 @@ export async function getAdminHomeroomAssignments() {
   }
 }
 
+export async function getAdminSubjects() {
+  try {
+    const response = await apiClient.get<ApiEnvelope<AdminSubject[]>>(
+      "/admin/subjects",
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function getAdminClasses() {
+  try {
+    const response = await apiClient.get<ApiEnvelope<AdminClass[]>>(
+      "/admin/classes",
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function getAdminSchoolYears() {
+  try {
+    const response = await apiClient.get<ApiEnvelope<AdminSchoolYear[]>>(
+      "/admin/school-years",
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function getAdminStudents() {
+  try {
+    const response = await apiClient.get<ApiEnvelope<AdminStudent[]>>(
+      "/admin/students",
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function getAdminStudentClassMemberships() {
+  try {
+    const response = await apiClient.get<
+      ApiEnvelope<AdminStudentClassMembership[]>
+    >("/admin/student-class-memberships");
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function getAdminAttendanceRules() {
+  try {
+    const response = await apiClient.get<ApiEnvelope<AdminAttendanceRule[]>>(
+      "/admin/attendance-rules",
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
 export async function createAdminUser(payload: AdminUserPayload) {
   try {
     const response = await apiClient.post<ApiEnvelope<AdminUser>>(
       "/admin/users",
+      payload,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function createAdminTeacherProfile(
+  payload: AdminTeacherProfilePayload,
+) {
+  try {
+    const response = await apiClient.post<ApiEnvelope<AdminTeacherProfile>>(
+      "/admin/teacher-profiles",
+      payload,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function createAdminTeacherSubjectAssignment(
+  payload: AdminTeacherSubjectAssignmentPayload,
+) {
+  try {
+    const response = await apiClient.post<
+      ApiEnvelope<AdminTeacherSubjectAssignment>
+    >("/admin/teacher-subject-assignments", payload);
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function createAdminHomeroomAssignment(
+  payload: AdminHomeroomAssignmentPayload,
+) {
+  try {
+    const response = await apiClient.post<ApiEnvelope<AdminHomeroomAssignment>>(
+      "/admin/homeroom-assignments",
+      payload,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function createAdminStudent(payload: AdminStudentPayload) {
+  try {
+    const response = await apiClient.post<ApiEnvelope<AdminStudent>>(
+      "/admin/students",
+      payload,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function createAdminStudentClassMembership(
+  payload: AdminStudentClassMembershipPayload,
+) {
+  try {
+    const response = await apiClient.post<
+      ApiEnvelope<AdminStudentClassMembership>
+    >("/admin/student-class-memberships", payload);
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function createAdminAttendanceRule(
+  payload: AdminAttendanceRulePayload,
+) {
+  try {
+    const response = await apiClient.post<ApiEnvelope<AdminAttendanceRule>>(
+      "/admin/attendance-rules",
       payload,
     );
     return response.data.data;

@@ -375,9 +375,7 @@ export default function HomePage() {
                     <h2 className="mt-5 max-w-[580px] text-[2rem] font-bold leading-[1.06] tracking-tight text-white md:text-[3.2rem]">
                       Lakukan Absensi Atau
                       <br />
-                      Manajemen Absensi Siswa
-                      <br />
-                      Di Sini
+                      Manajemen Absensi Siswa Di Sini
                     </h2>
                     <p className="mt-4 max-w-[500px] text-sm leading-7 text-white/80 md:text-base">
                       Silahkan login untuk melakukan tugas sesuai keinginan Anda
