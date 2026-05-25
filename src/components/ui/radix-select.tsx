@@ -84,12 +84,10 @@ function SelectItem({
   return (
     <Select.Item
       value={value}
-      className="relative flex cursor-pointer select-none items-start gap-3 rounded-[1rem] border border-transparent px-3 py-3 text-sm outline-none transition hover:-translate-y-[1px] hover:border-emerald-100 hover:bg-emerald-50/70 data-[highlighted]:border-emerald-100 data-[highlighted]:bg-emerald-50/85 data-[state=checked]:border-emerald-100 data-[state=checked]:bg-emerald-100/80"
+      className="group/item relative flex cursor-pointer select-none items-start gap-3 rounded-[1rem] border border-transparent px-3 py-3 text-sm outline-none transition hover:border-emerald-100 hover:bg-emerald-50/70 data-[highlighted]:border-emerald-100 data-[highlighted]:bg-emerald-50/85 data-[state=checked]:border-emerald-100 data-[state=checked]:bg-emerald-100/80"
     >
-      <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-emerald-600">
-        <Select.ItemIndicator>
-          <Check className="size-3.5" />
-        </Select.ItemIndicator>
+      <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-emerald-600 transition-colors group-hover/item:border-emerald-200 group-data-[highlighted]/item:border-emerald-200 group-data-[state=checked]/item:border-emerald-200">
+        <Check className="size-3.5 opacity-0 transition-opacity group-hover/item:opacity-100 group-data-[highlighted]/item:opacity-100 group-data-[state=checked]/item:opacity-100" />
       </span>
       <Select.ItemText asChild>{children}</Select.ItemText>
     </Select.Item>

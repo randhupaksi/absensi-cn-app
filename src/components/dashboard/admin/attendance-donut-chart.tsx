@@ -12,6 +12,10 @@ type AttendanceDonutChartProps = {
   sick: number;
   alpha: number;
   percentage: number;
+  title?: string;
+  subtitle?: string;
+  badgeText?: string;
+  emptyTitle?: string;
 };
 
 export function AttendanceDonutChart({
@@ -21,6 +25,10 @@ export function AttendanceDonutChart({
   sick,
   alpha,
   percentage,
+  title = "Persentase Kehadiran",
+  subtitle = "Snapshot kehadiran sekolah hari ini",
+  badgeText = "Hari ini",
+  emptyTitle = "Belum ada data absensi",
 }: AttendanceDonutChartProps) {
   const data = [
     { name: "Hadir", value: present || 0, color: "#63c98f" },
@@ -36,13 +44,11 @@ export function AttendanceDonutChart({
     <article className="rounded-[32px] border border-white/70 bg-white/88 p-5 shadow-[0_24px_52px_rgba(150,163,184,0.12)]">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-lg font-semibold text-slate-900">Persentase Kehadiran</p>
-          <p className="mt-1 text-sm text-slate-500">
-            Snapshot kehadiran sekolah hari ini
-          </p>
+          <p className="text-lg font-semibold text-slate-900">{title}</p>
+          <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
         </div>
         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
-          Hari ini
+          {badgeText}
         </span>
       </div>
 
@@ -73,6 +79,14 @@ export function AttendanceDonutChart({
                   </Pie>
                   <Tooltip
                     formatter={(value, name) => [`${Number(value ?? 0)}`, name ?? "Data"]}
+                    position={{
+                      x: Math.max(width - 128, 16),
+                      y: 18,
+                    }}
+                    wrapperStyle={{
+                      zIndex: 20,
+                      pointerEvents: "none",
+                    }}
                     contentStyle={{
                       borderRadius: 18,
                       border: "1px solid rgba(226,232,240,0.9)",
@@ -94,7 +108,7 @@ export function AttendanceDonutChart({
         <EmptyState
           icon={ChartNoAxesColumn}
           compact
-          title="Belum ada data absensi"
+          title={emptyTitle}
         />
       </div>
     </article>

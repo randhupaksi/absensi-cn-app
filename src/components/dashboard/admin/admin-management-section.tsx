@@ -5,12 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PremiumModal } from "@/components/ui/premium-modal";
-import { Search, ShieldCheck, SlidersHorizontal, Sparkles, LayoutPanelTop, LineChart, ArrowUpRight, BadgeCheck, UserCog, KeyRound } from "lucide-react";
+import { Search, ShieldCheck, SlidersHorizontal, Sparkles, LayoutPanelTop, LineChart, ArrowUpRight, BadgeCheck, UserCog, KeyRound, PencilLine, Trash2, FilePenLine, Plus } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { AdminUser, AdminUserPayload } from "@/types/admin";
-import { createAdminUser } from "@/services/admin.service";
+import { createAdminUser, deleteAdminUser, updateAdminUser } from "@/services/admin.service";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -28,6 +28,7 @@ export function AdminManagementSection({
   const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
 
   const createAdminMutation = useMutation({
     mutationFn: (payload: AdminUserPayload) => createAdminUser(payload),
@@ -35,6 +36,26 @@ export function AdminManagementSection({
       toast.success("Akun admin berhasil ditambahkan.");
       void queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       setModalOpen(false);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const updateAdminMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: AdminUserPayload }) =>
+      updateAdminUser(id, payload),
+    onSuccess: () => {
+      toast.success("Akun admin berhasil diperbarui.");
+      void queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      setEditingUser(null);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const deleteAdminMutation = useMutation({
+    mutationFn: deleteAdminUser,
+    onSuccess: () => {
+      toast.success("Akun admin berhasil dihapus.");
+      void queryClient.invalidateQueries({ queryKey: ["admin-users"] });
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -121,7 +142,7 @@ export function AdminManagementSection({
             </div>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-4">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {kpiCards.map((card) => (
               <AdminStatCard key={card.label} {...card} />
             ))}
@@ -133,30 +154,28 @@ export function AdminManagementSection({
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-              <div className="flex items-center gap-2 rounded-[24px] border border-slate-200/80 bg-white/84 px-3 py-2 shadow-[0_14px_28px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.92)]">
+              <div className="flex h-14 items-center gap-3 rounded-[24px] border border-slate-200/80 bg-white/84 px-4 shadow-[0_14px_28px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.92)] transition-colors duration-200 hover:border-emerald-200/90 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(242,252,247,0.98)_100%)]">
                 <span className="flex size-9 items-center justify-center rounded-2xl bg-[linear-gradient(180deg,#ffffff_0%,#f4faf7_100%)] text-slate-400 shadow-[0_8px_18px_rgba(15,23,42,0.06)]">
                   <SlidersHorizontal className="size-4" />
                 </span>
-                <div className="flex items-center gap-2 rounded-full bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)]">
-                  <Search className="size-4 text-slate-400" />
-                  <input
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Cari nama admin atau username"
-                    className="w-full min-w-[180px] bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400 sm:min-w-[240px]"
-                  />
-                </div>
+                <Search className="size-4 text-slate-400" />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Cari nama admin atau username"
+                  className="w-full min-w-[180px] bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400 sm:min-w-[240px]"
+                />
               </div>
 
               <Button
                 variant="outline"
-                className="h-14 rounded-[22px] border-emerald-200/80 bg-[linear-gradient(135deg,#123f36_0%,#115649_100%)] px-5 text-sm font-semibold text-white shadow-[0_18px_36px_rgba(17,86,73,0.22)] hover:border-emerald-200 hover:bg-[linear-gradient(135deg,#14483d_0%,#146756_100%)] hover:text-white"
+                className="h-14 rounded-[22px] border-emerald-200/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(238,252,245,0.98)_100%)] px-5 text-sm font-semibold text-emerald-900 shadow-[0_16px_30px_rgba(15,23,42,0.06),inset_0_1px_0_rgba(255,255,255,0.96)] hover:border-emerald-300 hover:bg-[linear-gradient(180deg,rgba(255,255,255,1)_0%,rgba(228,250,239,1)_100%)] hover:text-emerald-950"
                 onClick={() => setModalOpen(true)}
               >
-                <span className="flex size-8 items-center justify-center rounded-full bg-white/12">
-                  <ShieldCheck className="size-4" />
+                <span className="flex size-8 items-center justify-center rounded-full bg-emerald-600 text-white shadow-[0_10px_20px_rgba(16,185,129,0.18)]">
+                  <Plus className="size-4" />
                 </span>
-                Tambah Admin
+                Tambah
               </Button>
             </div>
           </div>
@@ -171,13 +190,13 @@ export function AdminManagementSection({
         <div className="mt-5 overflow-hidden rounded-[24px] border border-emerald-100/80">
           <div className="overflow-x-auto">
             {isLoading ? (
-              <AdminLoadingTable columnCount={4} />
+              <AdminLoadingTable columnCount={5} />
             ) : (
               <table className="min-w-full border-separate border-spacing-0 text-left">
                 <thead>
                   <tr className="bg-[#f3fbf6] text-sm text-slate-700">
-                    {["Administrator", "Username", "Role", "Akses"].map((label) => (
-                      <th key={label} className="border-b border-emerald-100/90 px-4 py-4 font-medium first:rounded-tl-[24px] last:rounded-tr-[24px]">
+                    {["Administrator", "Username", "Role", "Akses", "Aksi"].map((label) => (
+                      <th key={label} className={`border-b border-emerald-100/90 px-4 py-4 font-medium first:rounded-tl-[24px] last:rounded-tr-[24px] ${label === "Aksi" ? "text-center" : ""}`}>
                         {label}
                       </th>
                     ))}
@@ -186,7 +205,7 @@ export function AdminManagementSection({
                 <tbody>
                   {filteredAdmins.length === 0 ? (
                     <tr className="bg-white">
-                      <td colSpan={4} className="p-5">
+                      <td colSpan={5} className="p-5">
                         <EmptyState icon={ShieldCheck} title="Akun admin tidak ditemukan" description="Coba ubah pencarian atau tambahkan akun administrator baru." compact />
                       </td>
                     </tr>
@@ -211,6 +230,30 @@ export function AdminManagementSection({
                           </Badge>
                         </td>
                         <td className="border-t border-slate-100 px-4 py-4">Kontrol penuh dashboard dan master data</td>
+                        <td className="border-t border-slate-100 px-4 py-4">
+                          <div className="flex items-center justify-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="icon-sm"
+                              className="rounded-[14px] border-emerald-200/80 bg-white text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
+                              onClick={() => setEditingUser(user)}
+                            >
+                              <PencilLine className="size-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon-sm"
+                              className="rounded-[14px] border-red-200/80 bg-white text-red-500 hover:border-red-300 hover:bg-red-50 hover:text-red-500"
+                              onClick={() => {
+                                if (!window.confirm(`Hapus akun ${user.name}?`)) return;
+                                deleteAdminMutation.mutate(user.id);
+                              }}
+                              disabled={deleteAdminMutation.isPending}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
+                        </td>
                       </tr>
                     ))
                   )}
@@ -226,6 +269,18 @@ export function AdminManagementSection({
         onOpenChange={setModalOpen}
         isPending={createAdminMutation.isPending}
         onSubmit={(payload) => createAdminMutation.mutate(payload)}
+      />
+      <AdminEditModal
+        user={editingUser}
+        open={Boolean(editingUser)}
+        onOpenChange={(open) => {
+          if (!open) setEditingUser(null);
+        }}
+        isPending={updateAdminMutation.isPending}
+        onSubmit={(payload) => {
+          if (!editingUser) return;
+          updateAdminMutation.mutate({ id: editingUser.id, payload });
+        }}
       />
     </>
   );
@@ -287,6 +342,70 @@ function AdminCreateModal({
           <Button className="h-12 rounded-[1.1rem] bg-[linear-gradient(135deg,#0f766e_0%,#166534_100%)] px-5 text-sm font-semibold text-white shadow-[0_20px_40px_rgba(22,101,52,0.2)] hover:opacity-95" onClick={() => onSubmit(form)} disabled={isPending}>
             <Sparkles className="size-4" />
             {isPending ? "Menyimpan..." : "Simpan Admin"}
+          </Button>
+        </div>
+      </div>
+    </PremiumModal>
+  );
+}
+
+function AdminEditModal({
+  user,
+  open,
+  onOpenChange,
+  isPending,
+  onSubmit,
+}: {
+  user: AdminUser | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  isPending: boolean;
+  onSubmit: (payload: AdminUserPayload) => void;
+}) {
+  const [form, setForm] = useState<AdminUserPayload>({
+    name: "",
+    role: "ADMIN",
+    username: "",
+    nis: "",
+    password: "",
+  });
+
+  useEffect(() => {
+    if (!user) return;
+    setForm({
+      name: user.name,
+      role: "ADMIN",
+      username: user.username ?? "",
+      nis: "",
+      password: "",
+    });
+  }, [user]);
+
+  if (!user) return null;
+
+  return (
+    <PremiumModal open={open} onOpenChange={onOpenChange} title="Edit Admin" description="Perbarui identitas akun administrator dan isi password hanya jika memang ingin diganti." icon={FilePenLine}>
+      <div className="grid gap-5">
+        <div className="grid gap-4 md:grid-cols-2">
+          <FieldGroup label="Nama Administrator">
+            <Input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="Masukkan nama admin" className={inputClassName} />
+          </FieldGroup>
+          <FieldGroup label="Username Login">
+            <Input value={form.username} onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))} placeholder="Masukkan username admin" className={inputClassName} />
+          </FieldGroup>
+        </div>
+
+        <FieldGroup label="Password Baru">
+          <Input value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} placeholder="Kosongkan jika tidak diubah" className={inputClassName} />
+        </FieldGroup>
+
+        <div className="ui-modal-actions">
+          <Button variant="outline" className="h-12 rounded-[1.1rem] border-slate-200 px-5 text-sm font-semibold text-slate-600" onClick={() => onOpenChange(false)} disabled={isPending}>
+            Batal
+          </Button>
+          <Button className="h-12 rounded-[1.1rem] bg-[linear-gradient(135deg,#0f766e_0%,#166534_100%)] px-5 text-sm font-semibold text-white shadow-[0_20px_40px_rgba(22,101,52,0.2)] hover:opacity-95" onClick={() => onSubmit(form)} disabled={isPending}>
+            <Sparkles className="size-4" />
+            {isPending ? "Menyimpan..." : "Update Admin"}
           </Button>
         </div>
       </div>

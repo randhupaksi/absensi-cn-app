@@ -279,3 +279,136 @@ export async function deleteAdminUser(id: string) {
     throw new Error(getErrorMessage(error));
   }
 }
+
+export async function updateAdminTeacherProfile(
+  id: string,
+  payload: AdminTeacherProfilePayload,
+) {
+  try {
+    const response = await apiClient.patch<ApiEnvelope<AdminTeacherProfile>>(
+      `/admin/teacher-profiles/${id}`,
+      payload,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function deleteAdminTeacherProfile(id: string) {
+  try {
+    await apiClient.delete(`/admin/teacher-profiles/${id}`);
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function updateAdminTeacherSubjectAssignment(
+  id: string,
+  payload: AdminTeacherSubjectAssignmentPayload,
+) {
+  try {
+    const response = await apiClient.patch<
+      ApiEnvelope<AdminTeacherSubjectAssignment>
+    >(`/admin/teacher-subject-assignments/${id}`, payload);
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function deleteAdminTeacherSubjectAssignment(id: string) {
+  try {
+    await apiClient.delete(`/admin/teacher-subject-assignments/${id}`);
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function updateAdminHomeroomAssignment(
+  id: string,
+  payload: AdminHomeroomAssignmentPayload,
+) {
+  try {
+    const response = await apiClient.patch<ApiEnvelope<AdminHomeroomAssignment>>(
+      `/admin/homeroom-assignments/${id}`,
+      payload,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function deleteAdminHomeroomAssignment(id: string) {
+  try {
+    await apiClient.delete(`/admin/homeroom-assignments/${id}`);
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function updateAdminStudent(id: string, payload: AdminStudentPayload) {
+  try {
+    const response = await apiClient.patch<ApiEnvelope<AdminStudent>>(
+      `/admin/students/${id}`,
+      payload,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function deleteAdminStudent(id: string) {
+  try {
+    await apiClient.delete(`/admin/students/${id}`);
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function updateAdminStudentClassMembership(
+  id: string,
+  payload: AdminStudentClassMembershipPayload,
+) {
+  try {
+    const response = await apiClient.patch<
+      ApiEnvelope<AdminStudentClassMembership>
+    >(`/admin/student-class-memberships/${id}`, payload);
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function deleteAdminStudentClassMembership(id: string) {
+  try {
+    await apiClient.delete(`/admin/student-class-memberships/${id}`);
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function updateAdminAttendanceRule(
+  id: string,
+  payload: AdminAttendanceRulePayload,
+) {
+  try {
+    const response = await apiClient.patch<ApiEnvelope<AdminAttendanceRule>>(
+      `/admin/attendance-rules/${id}`,
+      payload,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function deleteAdminAttendanceRule(id: string) {
+  try {
+    await apiClient.delete(`/admin/attendance-rules/${id}`);
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}

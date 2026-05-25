@@ -12,6 +12,12 @@ import {
   createAdminAttendanceRule,
   createAdminStudent,
   createAdminStudentClassMembership,
+  deleteAdminAttendanceRule,
+  deleteAdminStudent,
+  deleteAdminStudentClassMembership,
+  updateAdminAttendanceRule,
+  updateAdminStudent,
+  updateAdminStudentClassMembership,
 } from "@/services/admin.service";
 import type {
   AdminAttendanceRule,
@@ -34,16 +40,19 @@ import {
   GraduationCap,
   LayoutPanelTop,
   LineChart,
+  PencilLine,
+  Plus,
   Search,
   ShieldCheck,
   SlidersHorizontal,
   Sparkles,
   TimerReset,
+  Trash2,
   UserPlus,
   UsersRound,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 type StudentSectionProps = {
@@ -80,6 +89,10 @@ export function StudentSection({
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [membershipModalOpen, setMembershipModalOpen] = useState(false);
   const [ruleModalOpen, setRuleModalOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState<AdminStudent | null>(null);
+  const [editingMembership, setEditingMembership] =
+    useState<AdminStudentClassMembership | null>(null);
+  const [editingRule, setEditingRule] = useState<AdminAttendanceRule | null>(null);
 
   const normalizedQuery = query.trim().toLowerCase();
 
@@ -111,6 +124,83 @@ export function StudentSection({
       toast.success("Aturan absensi berhasil ditambahkan.");
       void queryClient.invalidateQueries({ queryKey: ["admin-attendance-rules"] });
       setRuleModalOpen(false);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const updateStudentMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: AdminStudentPayload }) =>
+      updateAdminStudent(id, payload),
+    onSuccess: () => {
+      toast.success("Profil siswa berhasil diperbarui.");
+      void queryClient.invalidateQueries({ queryKey: ["admin-students"] });
+      setEditingStudent(null);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const deleteStudentMutation = useMutation({
+    mutationFn: deleteAdminStudent,
+    onSuccess: () => {
+      toast.success("Data siswa berhasil dihapus.");
+      void queryClient.invalidateQueries({ queryKey: ["admin-students"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["admin-student-class-memberships"],
+      });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const updateMembershipMutation = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: AdminStudentClassMembershipPayload;
+    }) => updateAdminStudentClassMembership(id, payload),
+    onSuccess: () => {
+      toast.success("Penempatan kelas siswa berhasil diperbarui.");
+      void queryClient.invalidateQueries({
+        queryKey: ["admin-student-class-memberships"],
+      });
+      setEditingMembership(null);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const deleteMembershipMutation = useMutation({
+    mutationFn: deleteAdminStudentClassMembership,
+    onSuccess: () => {
+      toast.success("Penempatan kelas siswa berhasil dihapus.");
+      void queryClient.invalidateQueries({
+        queryKey: ["admin-student-class-memberships"],
+      });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const updateRuleMutation = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: AdminAttendanceRulePayload;
+    }) => updateAdminAttendanceRule(id, payload),
+    onSuccess: () => {
+      toast.success("Aturan absensi berhasil diperbarui.");
+      void queryClient.invalidateQueries({ queryKey: ["admin-attendance-rules"] });
+      setEditingRule(null);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const deleteRuleMutation = useMutation({
+    mutationFn: deleteAdminAttendanceRule,
+    onSuccess: () => {
+      toast.success("Aturan absensi berhasil dihapus.");
+      void queryClient.invalidateQueries({ queryKey: ["admin-attendance-rules"] });
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -262,24 +352,20 @@ export function StudentSection({
 
   const addActionConfig = {
     profiles: {
-      label: "Tambah Profil Siswa",
-      icon: UsersRound,
+      label: "Tambah",
       onClick: () => setProfileModalOpen(true),
     },
     memberships: {
-      label: "Tambah Penempatan Kelas",
-      icon: GraduationCap,
+      label: "Tambah",
       onClick: () => setMembershipModalOpen(true),
     },
     rules: {
-      label: "Tambah Aturan Absensi",
-      icon: TimerReset,
+      label: "Tambah",
       onClick: () => setRuleModalOpen(true),
     },
-  } satisfies Record<StudentTab, { label: string; icon: LucideIcon; onClick: () => void }>;
+  } satisfies Record<StudentTab, { label: string; onClick: () => void }>;
 
   const activeAction = addActionConfig[activeTab];
-  const ActiveActionIcon = activeAction.icon;
 
   return (
     <>
@@ -321,7 +407,7 @@ export function StudentSection({
             </div>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-4">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {kpiCards.map((card) => (
               <StudentStatCard
                 key={card.label}
@@ -339,19 +425,17 @@ export function StudentSection({
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-              <div className="flex items-center gap-2 rounded-[24px] border border-slate-200/80 bg-white/84 px-3 py-2 shadow-[0_14px_28px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.92)]">
+              <div className="flex h-14 items-center gap-3 rounded-[24px] border border-slate-200/80 bg-white/84 px-4 shadow-[0_14px_28px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.92)] transition-colors duration-200 hover:border-emerald-200/90 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(242,252,247,0.98)_100%)]">
                 <span className="flex size-9 items-center justify-center rounded-2xl bg-[linear-gradient(180deg,#ffffff_0%,#f4faf7_100%)] text-slate-400 shadow-[0_8px_18px_rgba(15,23,42,0.06)]">
                   <SlidersHorizontal className="size-4" />
                 </span>
-                <div className="flex items-center gap-2 rounded-full bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)]">
-                  <Search className="size-4 text-slate-400" />
-                  <input
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Cari siswa, kelas, NIS, orang tua"
-                    className="w-full min-w-[180px] bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400 sm:min-w-[240px]"
-                  />
-                </div>
+                <Search className="size-4 text-slate-400" />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Cari siswa, kelas, NIS, orang tua"
+                  className="w-full min-w-[180px] bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400 sm:min-w-[240px]"
+                />
               </div>
 
               <div className="w-full sm:w-[190px]">
@@ -366,11 +450,11 @@ export function StudentSection({
 
               <Button
                 variant="outline"
-                className="h-14 rounded-[22px] border-emerald-200/80 bg-[linear-gradient(135deg,#123f36_0%,#115649_100%)] px-5 text-sm font-semibold text-white shadow-[0_18px_36px_rgba(17,86,73,0.22)] hover:border-emerald-200 hover:bg-[linear-gradient(135deg,#14483d_0%,#146756_100%)] hover:text-white"
+                className="h-14 rounded-[22px] border-emerald-200/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(238,252,245,0.98)_100%)] px-5 text-sm font-semibold text-emerald-900 shadow-[0_16px_30px_rgba(15,23,42,0.06),inset_0_1px_0_rgba(255,255,255,0.96)] hover:border-emerald-300 hover:bg-[linear-gradient(180deg,rgba(255,255,255,1)_0%,rgba(228,250,239,1)_100%)] hover:text-emerald-950"
                 onClick={activeAction.onClick}
               >
-                <span className="flex size-8 items-center justify-center rounded-full bg-white/12">
-                  <ActiveActionIcon className="size-4" />
+                <span className="flex size-8 items-center justify-center rounded-full bg-emerald-600 text-white shadow-[0_10px_20px_rgba(16,185,129,0.18)]">
+                  <Plus className="size-4" />
                 </span>
                 {activeAction.label}
               </Button>
@@ -405,13 +489,13 @@ export function StudentSection({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="profiles">
-            <StudentDataTableCard isLoading={isLoading} columnCount={7} emptyTitle="Belum ada siswa" emptyDescription="Tambahkan siswa baru agar data muncul pada daftar ini." icon={UsersRound}>
+          <TabsContent value="profiles" className="mt-4">
+            <StudentDataTableCard isLoading={isLoading} columnCount={8} emptyTitle="Belum ada siswa" emptyDescription="Tambahkan siswa baru agar data muncul pada daftar ini." icon={UsersRound}>
               <table className="min-w-full border-separate border-spacing-0 text-left">
                 <thead>
                   <tr className="bg-[#f3fbf6] text-sm text-slate-700">
-                    {["Siswa", "NIS / NISN", "Kontak", "Orang Tua", "Angkatan", "Gender", "Status"].map((label) => (
-                      <th key={label} className="border-b border-emerald-100/90 px-4 py-4 font-medium first:rounded-tl-[24px] last:rounded-tr-[24px]">
+                    {["Siswa", "NIS / NISN", "Kontak", "Orang Tua", "Angkatan", "Gender", "Status", "Aksi"].map((label) => (
+                      <th key={label} className={`border-b border-emerald-100/90 px-4 py-4 font-medium first:rounded-tl-[24px] last:rounded-tr-[24px] ${label === "Aksi" ? "text-center" : ""}`}>
                         {label}
                       </th>
                     ))}
@@ -419,7 +503,7 @@ export function StudentSection({
                 </thead>
                 <tbody>
                   {!isLoading && filteredStudents.length === 0 ? (
-                    <StudentEmptyRow colSpan={7} icon={UsersRound} title="Profil siswa tidak ditemukan" description="Coba ubah pencarian atau filter status siswa." />
+                    <StudentEmptyRow colSpan={8} icon={UsersRound} title="Profil siswa tidak ditemukan" description="Coba ubah pencarian atau filter status siswa." />
                   ) : (
                     filteredStudents.map((student) => (
                       <tr key={student.id} className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30">
@@ -457,6 +541,16 @@ export function StudentSection({
                         <td className="border-t border-slate-100 px-4 py-4">
                           <StudentStatusBadge isActive={student.is_active} />
                         </td>
+                        <td className="border-t border-slate-100 px-4 py-4">
+                          <ActionButtons
+                            onEdit={() => setEditingStudent(student)}
+                            onDelete={() => {
+                              if (!window.confirm(`Hapus siswa ${student.name}?`)) return;
+                              deleteStudentMutation.mutate(student.id);
+                            }}
+                            isDeletePending={deleteStudentMutation.isPending}
+                          />
+                        </td>
                       </tr>
                     ))
                   )}
@@ -465,13 +559,13 @@ export function StudentSection({
             </StudentDataTableCard>
           </TabsContent>
 
-          <TabsContent value="memberships">
-            <StudentDataTableCard isLoading={isLoading} columnCount={6} emptyTitle="Belum ada penempatan kelas" emptyDescription="Riwayat kelas siswa per tahun ajaran akan tampil di sini." icon={GraduationCap}>
+          <TabsContent value="memberships" className="mt-4">
+            <StudentDataTableCard isLoading={isLoading} columnCount={7} emptyTitle="Belum ada penempatan kelas" emptyDescription="Riwayat kelas siswa per tahun ajaran akan tampil di sini." icon={GraduationCap}>
               <table className="min-w-full border-separate border-spacing-0 text-left">
                 <thead>
                   <tr className="bg-[#f3fbf6] text-sm text-slate-700">
-                    {["Siswa", "Kelas", "Tahun Ajaran", "Status Member", "Aktif", "Waktu"].map((label) => (
-                      <th key={label} className="border-b border-emerald-100/90 px-4 py-4 font-medium first:rounded-tl-[24px] last:rounded-tr-[24px]">
+                    {["Siswa", "Kelas", "Tahun Ajaran", "Status Member", "Aktif", "Waktu", "Aksi"].map((label) => (
+                      <th key={label} className={`border-b border-emerald-100/90 px-4 py-4 font-medium first:rounded-tl-[24px] last:rounded-tr-[24px] ${label === "Aksi" ? "text-center" : ""}`}>
                         {label}
                       </th>
                     ))}
@@ -479,7 +573,7 @@ export function StudentSection({
                 </thead>
                 <tbody>
                   {!isLoading && filteredMemberships.length === 0 ? (
-                    <StudentEmptyRow colSpan={6} icon={GraduationCap} title="Penempatan kelas tidak ditemukan" description="Belum ada data penempatan yang cocok dengan filter saat ini." />
+                    <StudentEmptyRow colSpan={7} icon={GraduationCap} title="Penempatan kelas tidak ditemukan" description="Belum ada data penempatan yang cocok dengan filter saat ini." />
                   ) : (
                     filteredMemberships.map((membership) => (
                       <tr key={membership.id} className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30">
@@ -505,6 +599,16 @@ export function StudentSection({
                             <p>Keluar: {formatDateTime(membership.left_at)}</p>
                           </div>
                         </td>
+                        <td className="border-t border-slate-100 px-4 py-4">
+                          <ActionButtons
+                            onEdit={() => setEditingMembership(membership)}
+                            onDelete={() => {
+                              if (!window.confirm(`Hapus penempatan kelas ${membership.student_name}?`)) return;
+                              deleteMembershipMutation.mutate(membership.id);
+                            }}
+                            isDeletePending={deleteMembershipMutation.isPending}
+                          />
+                        </td>
                       </tr>
                     ))
                   )}
@@ -513,13 +617,13 @@ export function StudentSection({
             </StudentDataTableCard>
           </TabsContent>
 
-          <TabsContent value="rules">
-            <StudentDataTableCard isLoading={isLoading} columnCount={5} emptyTitle="Belum ada aturan absensi" emptyDescription="Rule jam hadir, telat, dan cutoff alfa akan muncul di tabel ini." icon={TimerReset}>
+          <TabsContent value="rules" className="mt-4">
+            <StudentDataTableCard isLoading={isLoading} columnCount={6} emptyTitle="Belum ada aturan absensi" emptyDescription="Rule jam hadir, telat, dan cutoff alfa akan muncul di tabel ini." icon={TimerReset}>
               <table className="min-w-full border-separate border-spacing-0 text-left">
                 <thead>
                   <tr className="bg-[#f3fbf6] text-sm text-slate-700">
-                    {["Tahun Ajaran", "Mulai Absen", "Tepat Waktu", "Batas Telat", "Status"].map((label) => (
-                      <th key={label} className="border-b border-emerald-100/90 px-4 py-4 font-medium first:rounded-tl-[24px] last:rounded-tr-[24px]">
+                    {["Tahun Ajaran", "Mulai Absen", "Tepat Waktu", "Batas Telat", "Status", "Aksi"].map((label) => (
+                      <th key={label} className={`border-b border-emerald-100/90 px-4 py-4 font-medium first:rounded-tl-[24px] last:rounded-tr-[24px] ${label === "Aksi" ? "text-center" : ""}`}>
                         {label}
                       </th>
                     ))}
@@ -527,7 +631,7 @@ export function StudentSection({
                 </thead>
                 <tbody>
                   {!isLoading && filteredRules.length === 0 ? (
-                    <StudentEmptyRow colSpan={5} icon={TimerReset} title="Aturan absensi tidak ditemukan" description="Tambahkan aturan absensi baru agar school year punya window check-in." />
+                    <StudentEmptyRow colSpan={6} icon={TimerReset} title="Aturan absensi tidak ditemukan" description="Tambahkan aturan absensi baru agar school year punya window check-in." />
                   ) : (
                     filteredRules.map((rule) => (
                       <tr key={rule.id} className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30">
@@ -537,6 +641,16 @@ export function StudentSection({
                         <td className="border-t border-slate-100 px-4 py-4">{rule.late_until}</td>
                         <td className="border-t border-slate-100 px-4 py-4">
                           <StudentStatusBadge isActive={rule.is_active} />
+                        </td>
+                        <td className="border-t border-slate-100 px-4 py-4">
+                          <ActionButtons
+                            onEdit={() => setEditingRule(rule)}
+                            onDelete={() => {
+                              if (!window.confirm(`Hapus aturan absensi ${rule.school_year}?`)) return;
+                              deleteRuleMutation.mutate(rule.id);
+                            }}
+                            isDeletePending={deleteRuleMutation.isPending}
+                          />
                         </td>
                       </tr>
                     ))
@@ -554,6 +668,15 @@ export function StudentSection({
         isPending={createStudentMutation.isPending}
         onSubmit={(payload) => createStudentMutation.mutate(payload)}
       />
+      <StudentProfileEditModal
+        student={editingStudent}
+        open={Boolean(editingStudent)}
+        onOpenChange={(open) => {
+          if (!open) setEditingStudent(null);
+        }}
+        isPending={updateStudentMutation.isPending}
+        onSubmit={(payload) => updateStudentMutation.mutate({ id: editingStudent!.id, payload })}
+      />
       <StudentMembershipCreateModal
         open={membershipModalOpen}
         onOpenChange={setMembershipModalOpen}
@@ -563,12 +686,34 @@ export function StudentSection({
         isPending={createMembershipMutation.isPending}
         onSubmit={(payload) => createMembershipMutation.mutate(payload)}
       />
+      <StudentMembershipEditModal
+        membership={editingMembership}
+        open={Boolean(editingMembership)}
+        onOpenChange={(open) => {
+          if (!open) setEditingMembership(null);
+        }}
+        students={students}
+        classes={classes}
+        schoolYears={schoolYears}
+        isPending={updateMembershipMutation.isPending}
+        onSubmit={(payload) => updateMembershipMutation.mutate({ id: editingMembership!.id, payload })}
+      />
       <AttendanceRuleCreateModal
         open={ruleModalOpen}
         onOpenChange={setRuleModalOpen}
         schoolYears={schoolYears}
         isPending={createRuleMutation.isPending}
         onSubmit={(payload) => createRuleMutation.mutate(payload)}
+      />
+      <AttendanceRuleEditModal
+        rule={editingRule}
+        open={Boolean(editingRule)}
+        onOpenChange={(open) => {
+          if (!open) setEditingRule(null);
+        }}
+        schoolYears={schoolYears}
+        isPending={updateRuleMutation.isPending}
+        onSubmit={(payload) => updateRuleMutation.mutate({ id: editingRule!.id, payload })}
       />
     </>
   );
@@ -700,6 +845,117 @@ function StudentProfileCreateModal({
   );
 }
 
+function StudentProfileEditModal({
+  student,
+  open,
+  onOpenChange,
+  isPending,
+  onSubmit,
+}: {
+  student: AdminStudent | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  isPending: boolean;
+  onSubmit: (payload: AdminStudentPayload) => void;
+}) {
+  const [form, setForm] = useState<AdminStudentPayload>({
+    name: "",
+    nis: "",
+    nisn: "",
+    password: "",
+    gender: "",
+    birth_place: "",
+    birth_date: "",
+    address: "",
+    phone: "",
+    parent_name: "",
+    parent_phone: "",
+    entry_year: new Date().getFullYear(),
+    is_active: true,
+  });
+
+  useEffect(() => {
+    if (!student) return;
+    setForm({
+      name: student.name,
+      nis: student.nis,
+      nisn: student.nisn ?? "",
+      password: "",
+      gender: student.gender ?? "",
+      birth_place: student.birth_place ?? "",
+      birth_date: student.birth_date ?? "",
+      address: student.address ?? "",
+      phone: student.phone ?? "",
+      parent_name: student.parent_name ?? "",
+      parent_phone: student.parent_phone ?? "",
+      entry_year: student.entry_year,
+      is_active: student.is_active,
+    });
+  }, [student]);
+
+  if (!student) return null;
+
+  return (
+    <PremiumModal open={open} onOpenChange={onOpenChange} title="Edit Profil Siswa" description="Perbarui data siswa dan isi password hanya jika memang ingin diganti." icon={FilePenLine}>
+      <div className="grid gap-5">
+        <div className="grid gap-4 md:grid-cols-2">
+          <FieldGroup label="Nama Siswa">
+            <Input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="Masukkan nama siswa" className={inputClassName} />
+          </FieldGroup>
+          <FieldGroup label="Password Baru">
+            <Input value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} placeholder="Kosongkan jika tidak diubah" className={inputClassName} />
+          </FieldGroup>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <FieldGroup label="NIS">
+            <Input value={form.nis} onChange={(event) => setForm((current) => ({ ...current, nis: event.target.value }))} placeholder="10 digit NIS" className={inputClassName} />
+          </FieldGroup>
+          <FieldGroup label="NISN">
+            <Input value={form.nisn} onChange={(event) => setForm((current) => ({ ...current, nisn: event.target.value }))} placeholder="Masukkan NISN" className={inputClassName} />
+          </FieldGroup>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <FieldGroup label="Jenis Kelamin">
+            <RadixSelectField value={form.gender} onValueChange={(value) => setForm((current) => ({ ...current, gender: value }))} placeholder="Pilih gender" options={[{ value: "MALE", label: "Laki-laki" }, { value: "FEMALE", label: "Perempuan" }]} />
+          </FieldGroup>
+          <FieldGroup label="Angkatan">
+            <Input value={String(form.entry_year)} onChange={(event) => setForm((current) => ({ ...current, entry_year: Number(event.target.value || 0) }))} placeholder="2026" className={inputClassName} />
+          </FieldGroup>
+          <FieldGroup label="Status Aktif">
+            <RadixSelectField value={String(form.is_active)} onValueChange={(value) => setForm((current) => ({ ...current, is_active: value === "true" }))} placeholder="Pilih status" options={[{ value: "true", label: "Aktif" }, { value: "false", label: "Nonaktif" }]} />
+          </FieldGroup>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <FieldGroup label="Telepon Siswa">
+            <Input value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} placeholder="08xxxxxxxxxx" className={inputClassName} />
+          </FieldGroup>
+          <FieldGroup label="Nama Orang Tua">
+            <Input value={form.parent_name} onChange={(event) => setForm((current) => ({ ...current, parent_name: event.target.value }))} placeholder="Masukkan nama orang tua" className={inputClassName} />
+          </FieldGroup>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <FieldGroup label="Telepon Orang Tua">
+            <Input value={form.parent_phone} onChange={(event) => setForm((current) => ({ ...current, parent_phone: event.target.value }))} placeholder="08xxxxxxxxxx" className={inputClassName} />
+          </FieldGroup>
+          <FieldGroup label="Tempat Lahir">
+            <Input value={form.birth_place} onChange={(event) => setForm((current) => ({ ...current, birth_place: event.target.value }))} placeholder="Contoh: Cianjur" className={inputClassName} />
+          </FieldGroup>
+        </div>
+
+        <FieldGroup label="Alamat">
+          <Textarea value={form.address} onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))} placeholder="Masukkan alamat siswa" className={textareaClassName} />
+        </FieldGroup>
+
+        <ModalActions isPending={isPending} onCancel={() => onOpenChange(false)} onSubmit={() => onSubmit(form)} submitLabel="Update Profil Siswa" />
+      </div>
+    </PremiumModal>
+  );
+}
+
 function StudentMembershipCreateModal({
   open,
   onOpenChange,
@@ -773,6 +1029,80 @@ function StudentMembershipCreateModal({
   );
 }
 
+function StudentMembershipEditModal({
+  membership,
+  open,
+  onOpenChange,
+  students,
+  classes,
+  schoolYears,
+  isPending,
+  onSubmit,
+}: {
+  membership: AdminStudentClassMembership | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  students: AdminStudent[];
+  classes: AdminClass[];
+  schoolYears: AdminSchoolYear[];
+  isPending: boolean;
+  onSubmit: (payload: AdminStudentClassMembershipPayload) => void;
+}) {
+  const [form, setForm] = useState<AdminStudentClassMembershipPayload>({
+    student_id: "",
+    class_id: "",
+    school_year_id: "",
+    status: "ACTIVE",
+    joined_at: "",
+    left_at: "",
+    is_active: true,
+  });
+
+  useEffect(() => {
+    if (!membership) return;
+    setForm({
+      student_id: membership.student_id,
+      class_id: membership.class_id,
+      school_year_id: membership.school_year_id,
+      status: membership.status,
+      joined_at: membership.joined_at ?? "",
+      left_at: membership.left_at ?? "",
+      is_active: membership.is_active,
+    });
+  }, [membership]);
+
+  if (!membership) return null;
+
+  return (
+    <PremiumModal open={open} onOpenChange={onOpenChange} title="Edit Penempatan Kelas" description="Perbarui rombel siswa per tahun ajaran tanpa menghilangkan struktur riwayatnya." icon={GraduationCap}>
+      <div className="grid gap-5">
+        <div className="grid gap-4 md:grid-cols-2">
+          <FieldGroup label="Siswa">
+            <RadixSelectField value={form.student_id} onValueChange={(value) => setForm((current) => ({ ...current, student_id: value }))} placeholder="Pilih siswa" options={students.map((student) => ({ value: student.id, label: student.name, description: student.nis }))} />
+          </FieldGroup>
+          <FieldGroup label="Kelas">
+            <RadixSelectField value={form.class_id} onValueChange={(value) => setForm((current) => ({ ...current, class_id: value }))} placeholder="Pilih kelas" options={classes.map((item) => ({ value: item.id, label: item.display_name, description: item.school_year_name }))} />
+          </FieldGroup>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <FieldGroup label="Tahun Ajaran">
+            <RadixSelectField value={form.school_year_id} onValueChange={(value) => setForm((current) => ({ ...current, school_year_id: value }))} placeholder="Pilih tahun ajaran" options={schoolYears.map((item) => ({ value: item.id, label: item.name, description: `${item.start_year} - ${item.end_year}` }))} />
+          </FieldGroup>
+          <FieldGroup label="Status Membership">
+            <RadixSelectField value={form.status} onValueChange={(value) => setForm((current) => ({ ...current, status: value }))} placeholder="Pilih status" options={[{ value: "ACTIVE", label: "ACTIVE" }, { value: "TRANSFERRED", label: "TRANSFERRED" }, { value: "GRADUATED", label: "GRADUATED" }, { value: "INACTIVE", label: "INACTIVE" }]} />
+          </FieldGroup>
+          <FieldGroup label="Status Aktif">
+            <RadixSelectField value={String(form.is_active)} onValueChange={(value) => setForm((current) => ({ ...current, is_active: value === "true" }))} placeholder="Pilih status" options={[{ value: "true", label: "Aktif" }, { value: "false", label: "Nonaktif" }]} />
+          </FieldGroup>
+        </div>
+
+        <ModalActions isPending={isPending} onCancel={() => onOpenChange(false)} onSubmit={() => onSubmit(form)} submitLabel="Update Penempatan" />
+      </div>
+    </PremiumModal>
+  );
+}
+
 function AttendanceRuleCreateModal({
   open,
   onOpenChange,
@@ -837,6 +1167,71 @@ function AttendanceRuleCreateModal({
   );
 }
 
+function AttendanceRuleEditModal({
+  rule,
+  open,
+  onOpenChange,
+  schoolYears,
+  isPending,
+  onSubmit,
+}: {
+  rule: AdminAttendanceRule | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  schoolYears: AdminSchoolYear[];
+  isPending: boolean;
+  onSubmit: (payload: AdminAttendanceRulePayload) => void;
+}) {
+  const [form, setForm] = useState<AdminAttendanceRulePayload>({
+    school_year_id: "",
+    check_in_start: "06:30:00",
+    on_time_until: "07:00:00",
+    late_until: "07:30:00",
+    is_active: true,
+  });
+
+  useEffect(() => {
+    if (!rule) return;
+    setForm({
+      school_year_id: rule.school_year_id,
+      check_in_start: rule.check_in_start,
+      on_time_until: rule.on_time_until,
+      late_until: rule.late_until,
+      is_active: rule.is_active,
+    });
+  }, [rule]);
+
+  if (!rule) return null;
+
+  return (
+    <PremiumModal open={open} onOpenChange={onOpenChange} title="Edit Aturan Absensi" description="Perbarui window hadir, telat, dan cutoff absensi untuk tahun ajaran yang dipilih." icon={TimerReset}>
+      <div className="grid gap-5">
+        <FieldGroup label="Tahun Ajaran">
+          <RadixSelectField value={form.school_year_id} onValueChange={(value) => setForm((current) => ({ ...current, school_year_id: value }))} placeholder="Pilih tahun ajaran" options={schoolYears.map((item) => ({ value: item.id, label: item.name, description: `${item.start_year} - ${item.end_year}` }))} />
+        </FieldGroup>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <FieldGroup label="Mulai Absen">
+            <Input value={form.check_in_start} onChange={(event) => setForm((current) => ({ ...current, check_in_start: event.target.value }))} placeholder="06:30:00" className={inputClassName} />
+          </FieldGroup>
+          <FieldGroup label="Batas Tepat Waktu">
+            <Input value={form.on_time_until} onChange={(event) => setForm((current) => ({ ...current, on_time_until: event.target.value }))} placeholder="07:00:00" className={inputClassName} />
+          </FieldGroup>
+          <FieldGroup label="Batas Telat">
+            <Input value={form.late_until} onChange={(event) => setForm((current) => ({ ...current, late_until: event.target.value }))} placeholder="07:30:00" className={inputClassName} />
+          </FieldGroup>
+        </div>
+
+        <FieldGroup label="Status Rule">
+          <RadixSelectField value={String(form.is_active)} onValueChange={(value) => setForm((current) => ({ ...current, is_active: value === "true" }))} placeholder="Pilih status" options={[{ value: "true", label: "Aktif" }, { value: "false", label: "Nonaktif" }]} />
+        </FieldGroup>
+
+        <ModalActions isPending={isPending} onCancel={() => onOpenChange(false)} onSubmit={() => onSubmit(form)} submitLabel="Update Aturan Absensi" />
+      </div>
+    </PremiumModal>
+  );
+}
+
 function StudentDataTableCard({
   children,
   icon,
@@ -881,6 +1276,38 @@ function StudentEmptyRow({
         <EmptyState icon={icon} title={title} description={description} compact />
       </td>
     </tr>
+  );
+}
+
+function ActionButtons({
+  onEdit,
+  onDelete,
+  isDeletePending,
+}: {
+  onEdit: () => void;
+  onDelete: () => void;
+  isDeletePending?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-center gap-2">
+      <Button
+        variant="outline"
+        size="icon-sm"
+        className="rounded-[14px] border-emerald-200/80 bg-white text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
+        onClick={onEdit}
+      >
+        <PencilLine className="size-4" />
+      </Button>
+      <Button
+        variant="outline"
+        size="icon-sm"
+        className="rounded-[14px] border-red-200/80 bg-white text-red-500 hover:border-red-300 hover:bg-red-50 hover:text-red-500"
+        onClick={onDelete}
+        disabled={isDeletePending}
+      >
+        <Trash2 className="size-4" />
+      </Button>
+    </div>
   );
 }
 

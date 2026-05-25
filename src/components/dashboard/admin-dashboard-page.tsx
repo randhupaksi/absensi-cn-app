@@ -18,6 +18,7 @@ import { AttendanceDonutChart } from "@/components/dashboard/admin/attendance-do
 import { SemesterAttendanceChart } from "@/components/dashboard/admin/semester-attendance-chart";
 import { ClassPerformanceChart } from "@/components/dashboard/admin/class-performance-chart";
 import { AnnouncementCard } from "@/components/dashboard/admin/announcement-card";
+import { RoleDistributionTable } from "@/components/dashboard/admin/role-distribution-table";
 
 const fallbackDashboard: AdminDashboardData = {
   attendance_percentage: 0,
@@ -116,6 +117,40 @@ export function AdminDashboardPage() {
                   </motion.div>
                 ))}
               </div>
+
+              <RoleDistributionTable
+                totalUsers={dashboard.counts.total_users ?? 0}
+                rows={[
+                  {
+                    label: "Siswa",
+                    count: dashboard.counts.total_students ?? 0,
+                    caption: "Akun portal siswa",
+                    colorClass: "bg-amber-400",
+                    barClass: "bg-amber-400",
+                  },
+                  {
+                    label: "Guru",
+                    count: dashboard.counts.total_teachers ?? 0,
+                    caption: "Pengajar dan walas",
+                    colorClass: "bg-sky-400",
+                    barClass: "bg-sky-400",
+                  },
+                  {
+                    label: "BK",
+                    count: dashboard.counts.total_bk ?? 0,
+                    caption: "Bimbingan konseling",
+                    colorClass: "bg-emerald-400",
+                    barClass: "bg-emerald-400",
+                  },
+                  {
+                    label: "Admin",
+                    count: dashboard.counts.total_admins ?? 0,
+                    caption: "Pengelola sistem",
+                    colorClass: "bg-rose-400",
+                    barClass: "bg-rose-400",
+                  },
+                ]}
+              />
             </div>
 
             <div className="space-y-5 self-start">

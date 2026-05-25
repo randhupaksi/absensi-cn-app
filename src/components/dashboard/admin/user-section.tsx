@@ -7,17 +7,23 @@ import { Input } from "@/components/ui/input";
 import { PremiumModal } from "@/components/ui/premium-modal";
 import { RadixSelectField } from "@/components/ui/radix-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { createAdminUser } from "@/services/admin.service";
+import {
+  createAdminUser,
+  deleteAdminUser,
+  updateAdminUser,
+} from "@/services/admin.service";
 import type { AdminUser, AdminUserPayload } from "@/types/admin";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowUpRight,
-  BadgeCheck,
+  PencilLine,
+  Trash2,
   FilePenLine,
   GraduationCap,
   LayoutPanelTop,
   LineChart,
+  Plus,
   Search,
   ShieldCheck,
   SlidersHorizontal,
@@ -26,7 +32,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 type UserSectionProps = {
@@ -46,6 +52,7 @@ export function UserSection({
   const [query, setQuery] = useState("");
   const [activeTab, setActiveTab] = useState<UserTab>("all");
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
 
   const createUserMutation = useMutation({
     mutationFn: createAdminUser,
@@ -53,6 +60,26 @@ export function UserSection({
       toast.success("Akun baru berhasil ditambahkan.");
       void queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       setModalOpen(false);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const updateUserMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: AdminUserPayload }) =>
+      updateAdminUser(id, payload),
+    onSuccess: () => {
+      toast.success("Akun staff berhasil diperbarui.");
+      void queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      setEditingUser(null);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: deleteAdminUser,
+    onSuccess: () => {
+      toast.success("Akun staff berhasil dihapus.");
+      void queryClient.invalidateQueries({ queryKey: ["admin-users"] });
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -148,7 +175,7 @@ export function UserSection({
             </div>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-4">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {kpiCards.map((card) => (
               <UserStatCard
                 key={card.label}
@@ -166,30 +193,28 @@ export function UserSection({
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-              <div className="flex items-center gap-2 rounded-[24px] border border-slate-200/80 bg-white/84 px-3 py-2 shadow-[0_14px_28px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.92)]">
+              <div className="flex h-14 items-center gap-3 rounded-[24px] border border-slate-200/80 bg-white/84 px-4 shadow-[0_14px_28px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.92)] transition-colors duration-200 hover:border-emerald-200/90 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(242,252,247,0.98)_100%)]">
                 <span className="flex size-9 items-center justify-center rounded-2xl bg-[linear-gradient(180deg,#ffffff_0%,#f4faf7_100%)] text-slate-400 shadow-[0_8px_18px_rgba(15,23,42,0.06)]">
                   <SlidersHorizontal className="size-4" />
                 </span>
-                <div className="flex items-center gap-2 rounded-full bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)]">
-                  <Search className="size-4 text-slate-400" />
-                  <input
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Cari nama, role, username"
-                    className="w-full min-w-[180px] bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400 sm:min-w-[240px]"
-                  />
-                </div>
+                <Search className="size-4 text-slate-400" />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Cari nama, role, username"
+                  className="w-full min-w-[180px] bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400 sm:min-w-[240px]"
+                />
               </div>
 
               <Button
                 variant="outline"
-                className="h-14 rounded-[22px] border-emerald-200/80 bg-[linear-gradient(135deg,#123f36_0%,#115649_100%)] px-5 text-sm font-semibold text-white shadow-[0_18px_36px_rgba(17,86,73,0.22)] hover:border-emerald-200 hover:bg-[linear-gradient(135deg,#14483d_0%,#146756_100%)] hover:text-white"
+                className="h-14 rounded-[22px] border-emerald-200/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(238,252,245,0.98)_100%)] px-5 text-sm font-semibold text-emerald-900 shadow-[0_16px_30px_rgba(15,23,42,0.06),inset_0_1px_0_rgba(255,255,255,0.96)] hover:border-emerald-300 hover:bg-[linear-gradient(180deg,rgba(255,255,255,1)_0%,rgba(228,250,239,1)_100%)] hover:text-emerald-950"
                 onClick={() => setModalOpen(true)}
               >
-                <span className="flex size-8 items-center justify-center rounded-full bg-white/12">
-                  <UserCog className="size-4" />
+                <span className="flex size-8 items-center justify-center rounded-full bg-emerald-600 text-white shadow-[0_10px_20px_rgba(16,185,129,0.18)]">
+                  <Plus className="size-4" />
                 </span>
-                Tambah Role Staff
+                Tambah
               </Button>
             </div>
           </div>
@@ -221,14 +246,14 @@ export function UserSection({
             </TabsTrigger>
           </TabsList>
 
-          {(["all", "admins", "bk", "teachers"] as UserTab[]).map((tab) => (
-            <TabsContent key={tab} value={tab}>
-              <UserDataTableCard isLoading={isLoading} columnCount={5} emptyTitle="Belum ada role staff" emptyDescription="Tambahkan akun baru untuk admin, BK, atau guru dari section ini." icon={ShieldCheck}>
+        {(["all", "admins", "bk", "teachers"] as UserTab[]).map((tab) => (
+          <TabsContent key={tab} value={tab} className="mt-4">
+              <UserDataTableCard isLoading={isLoading} columnCount={6} emptyTitle="Belum ada role staff" emptyDescription="Tambahkan akun baru untuk admin, BK, atau guru dari section ini." icon={ShieldCheck}>
                 <table className="min-w-full border-separate border-spacing-0 text-left">
                   <thead>
                     <tr className="bg-[#f3fbf6] text-sm text-slate-700">
-                      {["Nama", "Role", "Username", "Identifier", "Akses"].map((label) => (
-                        <th key={label} className="border-b border-emerald-100/90 px-4 py-4 font-medium first:rounded-tl-[24px] last:rounded-tr-[24px]">
+                      {["Nama", "Role", "Username", "Identifier", "Akses", "Aksi"].map((label) => (
+                        <th key={label} className={`border-b border-emerald-100/90 px-4 py-4 font-medium first:rounded-tl-[24px] last:rounded-tr-[24px] ${label === "Aksi" ? "text-center" : ""}`}>
                           {label}
                         </th>
                       ))}
@@ -236,7 +261,7 @@ export function UserSection({
                   </thead>
                   <tbody>
                     {!isLoading && filteredUsers.length === 0 ? (
-                      <UserEmptyRow colSpan={5} icon={ShieldCheck} title="Role staff tidak ditemukan" description="Coba ubah tab atau kata kunci pencarian akun staff." />
+                      <UserEmptyRow colSpan={6} icon={ShieldCheck} title="Role staff tidak ditemukan" description="Coba ubah tab atau kata kunci pencarian akun staff." />
                     ) : (
                       filteredUsers.map((user) => (
                         <tr key={user.id} className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30">
@@ -257,6 +282,30 @@ export function UserSection({
                           <td className="border-t border-slate-100 px-4 py-4">{user.username || "-"}</td>
                           <td className="border-t border-slate-100 px-4 py-4">{user.username || user.nis || "-"}</td>
                           <td className="border-t border-slate-100 px-4 py-4">{roleDescription(user.role)}</td>
+                          <td className="border-t border-slate-100 px-4 py-4">
+                            <div className="flex items-center justify-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="icon-sm"
+                                className="rounded-[14px] border-emerald-200/80 bg-white text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
+                                onClick={() => setEditingUser(user)}
+                              >
+                                <PencilLine className="size-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="icon-sm"
+                                className="rounded-[14px] border-red-200/80 bg-white text-red-500 hover:border-red-300 hover:bg-red-50 hover:text-red-500"
+                                onClick={() => {
+                                  if (!window.confirm(`Hapus akun ${user.name}?`)) return;
+                                  deleteUserMutation.mutate(user.id);
+                                }}
+                                disabled={deleteUserMutation.isPending}
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
+                            </div>
+                          </td>
                         </tr>
                       ))
                     )}
@@ -273,6 +322,18 @@ export function UserSection({
         onOpenChange={setModalOpen}
         isPending={createUserMutation.isPending}
         onSubmit={(payload) => createUserMutation.mutate(payload)}
+      />
+      <UserEditModal
+        user={editingUser}
+        open={Boolean(editingUser)}
+        onOpenChange={(open) => {
+          if (!open) setEditingUser(null);
+        }}
+        isPending={updateUserMutation.isPending}
+        onSubmit={(payload) => {
+          if (!editingUser) return;
+          updateUserMutation.mutate({ id: editingUser.id, payload });
+        }}
       />
     </>
   );
@@ -333,6 +394,67 @@ function UserCreateModal({
         </div>
 
         <UserModalActions isPending={isPending} onCancel={() => handleOpenChange(false)} onSubmit={() => onSubmit(form)} submitLabel="Simpan Role Staff" />
+      </div>
+    </PremiumModal>
+  );
+}
+
+function UserEditModal({
+  user,
+  open,
+  onOpenChange,
+  isPending,
+  onSubmit,
+}: {
+  user: AdminUser | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  isPending: boolean;
+  onSubmit: (payload: AdminUserPayload) => void;
+}) {
+  const [form, setForm] = useState<AdminUserPayload>({
+    name: "",
+    role: "ADMIN",
+    username: "",
+    nis: "",
+    password: "",
+  });
+
+  useEffect(() => {
+    if (!user) return;
+    setForm({
+      name: user.name,
+      role: user.role,
+      username: user.username ?? "",
+      nis: user.nis ?? "",
+      password: "",
+    });
+  }, [user]);
+
+  if (!user) return null;
+
+  return (
+    <PremiumModal open={open} onOpenChange={onOpenChange} title="Edit Role Staff" description="Perbarui nama akun, role, username, dan password bila memang perlu diganti." icon={FilePenLine}>
+      <div className="grid gap-5">
+        <div className="grid gap-4 md:grid-cols-2">
+          <FieldGroup label="Nama Akun">
+            <Input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="Masukkan nama akun" className={userInputClassName} />
+          </FieldGroup>
+          <FieldGroup label="Role">
+            <RadixSelectField value={form.role} onValueChange={(value) => setForm((current) => ({ ...current, role: value as AdminUser["role"] }))} placeholder="Pilih role" options={[{ value: "ADMIN", label: "ADMIN" }, { value: "BK", label: "BK" }, { value: "TEACHER", label: "TEACHER" }]} />
+          </FieldGroup>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <FieldGroup label="Username">
+            <Input value={form.username} onChange={(event) => setForm((current) => ({ ...current, username: event.target.value, nis: "" }))} placeholder="Masukkan username" className={userInputClassName} />
+          </FieldGroup>
+          <FieldGroup label="Password Baru">
+            <Input value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} placeholder="Kosongkan jika tidak diubah" className={userInputClassName} />
+          </FieldGroup>
+        </div>
+
+        <UserModalActions isPending={isPending} onCancel={() => onOpenChange(false)} onSubmit={() => onSubmit(form)} submitLabel="Update Role Staff" />
       </div>
     </PremiumModal>
   );

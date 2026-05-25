@@ -1,5 +1,5 @@
-import { RoleDashboardPage } from "@/components/dashboard/role-dashboard-page";
+import { WalasDashboardPage } from "@/components/dashboard/walas-dashboard-page";
 
 export default function HomeroomDashboardPage() {
-  return <RoleDashboardPage expectedRole="walas" />;
+  return <WalasDashboardPage />;
 }

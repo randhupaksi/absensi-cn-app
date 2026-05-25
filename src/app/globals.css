@@ -157,6 +157,30 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(16, 185, 129, 0.72) rgba(226, 232, 240, 0.7);
+  }
+
+  *::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  *::-webkit-scrollbar-track {
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(236, 253, 245, 0.88), rgba(226, 232, 240, 0.82));
+  }
+
+  *::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(52, 211, 153, 0.92), rgba(5, 150, 105, 0.88));
+    background-clip: padding-box;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(22, 163, 74, 0.96), rgba(4, 120, 87, 0.92));
+    background-clip: padding-box;
   }
   html {
     @apply font-sans scroll-smooth;
