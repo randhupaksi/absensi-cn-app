@@ -95,6 +95,20 @@ export type StaffAttendanceRecord = {
   verification_note?: string;
 };
 
+export type StaffHomeroomAttendanceOverview = {
+  homeroom: StaffHomeroomContext;
+  date: string;
+  status_filter?: string;
+  query?: string;
+  summary: StaffAttendanceSummary;
+  records: StaffAttendanceRecord[];
+};
+
+export type StaffAttendanceReviewPayload = {
+  status: string;
+  verification_note: string;
+};
+
 export type StaffHomeroomStudentDetail = {
   student: StaffStudentSummary;
   attendance_summary: StaffAttendanceSummary;

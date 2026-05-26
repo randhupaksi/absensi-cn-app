@@ -49,7 +49,9 @@ export function WalasDashboardPage() {
     queryFn: getTeacherHomeroomDashboard,
   });
 
-  const dashboard = dashboardQuery.data ?? fallbackDashboard;
+  const dashboard = normalizeHomeroomDashboard(
+    dashboardQuery.data ?? fallbackDashboard,
+  );
   const totalAttendanceToday =
     dashboard.today.present +
     dashboard.today.late +
@@ -412,12 +414,29 @@ function HomeroomSubmissionCard({
 function getSubmissionStatusTone(status: string) {
   switch (status.toLowerCase()) {
     case "approved":
+    case "diterima":
       return "bg-emerald-100 text-emerald-700";
     case "rejected":
+    case "ditolak":
       return "bg-rose-100 text-rose-700";
     default:
       return "bg-amber-100 text-amber-700";
   }
+}
+
+function normalizeHomeroomDashboard(
+  dashboard: StaffHomeroomDashboard,
+): StaffHomeroomDashboard {
+  return {
+    ...dashboard,
+    today: {
+      ...dashboard.today,
+      repeated_late: dashboard.today?.repeated_late ?? [],
+      repeated_alpha: dashboard.today?.repeated_alpha ?? [],
+    },
+    students_needing_attention: dashboard.students_needing_attention ?? [],
+    recent_submissions: dashboard.recent_submissions ?? [],
+  };
 }
 
 function getWalasSectionTitle(pathname: string) {

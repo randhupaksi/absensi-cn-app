@@ -4,7 +4,12 @@ import { EmptyState } from "@/components/dashboard/admin/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PremiumModal } from "@/components/ui/premium-modal";
+import {
+  PremiumModal,
+  premiumModalActionsClassName,
+  premiumModalFieldClassName,
+  premiumModalLabelClassName,
+} from "@/components/ui/premium-modal";
 import { Search, ShieldCheck, SlidersHorizontal, Sparkles, LayoutPanelTop, LineChart, ArrowUpRight, BadgeCheck, UserCog, KeyRound, PencilLine, Trash2, FilePenLine, Plus } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
@@ -335,7 +340,7 @@ function AdminCreateModal({
           <Input value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} placeholder="Minimal 6 karakter" className={inputClassName} />
         </FieldGroup>
 
-        <div className="ui-modal-actions">
+        <div className={premiumModalActionsClassName}>
           <Button variant="outline" className="h-12 rounded-[1.1rem] border-slate-200 px-5 text-sm font-semibold text-slate-600" onClick={() => handleOpenChange(false)} disabled={isPending}>
             Batal
           </Button>
@@ -399,7 +404,7 @@ function AdminEditModal({
           <Input value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} placeholder="Kosongkan jika tidak diubah" className={inputClassName} />
         </FieldGroup>
 
-        <div className="ui-modal-actions">
+        <div className={premiumModalActionsClassName}>
           <Button variant="outline" className="h-12 rounded-[1.1rem] border-slate-200 px-5 text-sm font-semibold text-slate-600" onClick={() => onOpenChange(false)} disabled={isPending}>
             Batal
           </Button>
@@ -468,8 +473,8 @@ function FieldGroup({
   children: ReactNode;
 }) {
   return (
-    <div className="ui-modal-field">
-      <label className="ui-modal-label">{label}</label>
+    <div className={premiumModalFieldClassName}>
+      <label className={premiumModalLabelClassName}>{label}</label>
       {children}
     </div>
   );

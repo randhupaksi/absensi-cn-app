@@ -238,7 +238,7 @@ export function WalasStudentsPage() {
                         <th className="px-5 py-4 font-semibold">Siswa</th>
                         <th className="px-5 py-4 font-semibold">Identitas</th>
                         <th className="px-5 py-4 font-semibold">Gender</th>
-                        <th className="px-5 py-4 font-semibold">Status</th>
+                        <th className="px-5 py-4 text-center font-semibold">Status</th>
                         <th className="px-5 py-4 font-semibold">Telat</th>
                         <th className="px-5 py-4 font-semibold">Alfa</th>
                         <th className="px-5 py-4 font-semibold">Ringkasan</th>
@@ -380,8 +380,8 @@ function StudentDetailModal({
           <LoadingTable columnCount={3} />
         ) : (
           <>
-            <div className="grid gap-4 md:grid-cols-[1.2fr_0.8fr]">
-              <div className="rounded-[24px] border border-emerald-100/70 bg-[linear-gradient(180deg,#ffffff_0%,#f4faf7_100%)] p-5 shadow-[0_16px_30px_rgba(15,23,42,0.05)]">
+            <div className="grid items-start gap-4 md:grid-cols-[1.2fr_0.8fr]">
+              <div className="h-fit rounded-[24px] border border-emerald-100/70 bg-white/94 p-5 shadow-[0_16px_30px_rgba(15,23,42,0.05)]">
                 <div className="flex items-start gap-4">
                   <span className="flex size-14 items-center justify-center rounded-[22px] bg-[linear-gradient(180deg,#effcf6_0%,#dff7eb_100%)] text-base font-semibold text-emerald-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.95)]">
                     {getInitials(student.name)}
@@ -408,7 +408,7 @@ function StudentDetailModal({
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-1">
+              <div className="grid gap-3 self-start sm:grid-cols-2 md:grid-cols-1">
                 <MiniStatCard label="Hadir" value={studentDetail.attendance_summary.present} tone="success" />
                 <MiniStatCard label="Telat" value={studentDetail.attendance_summary.late} tone="warning" />
                 <MiniStatCard label="Alfa" value={studentDetail.attendance_summary.alpha} tone="danger" />
@@ -551,15 +551,15 @@ function MiniStatCard({
 }) {
   return (
     <div
-      className={`rounded-[20px] border px-4 py-4 shadow-[0_10px_20px_rgba(15,23,42,0.05)] ${
+      className={`rounded-[20px] border px-4 py-4 shadow-[0_14px_28px_rgba(15,23,42,0.08)] ${
         tone === "success"
-          ? "border-emerald-100 bg-emerald-50/70"
+          ? "border-emerald-200 bg-[linear-gradient(180deg,rgba(220,252,231,0.95)_0%,rgba(187,247,208,0.82)_100%)]"
           : tone === "warning"
-            ? "border-amber-100 bg-amber-50/70"
-            : "border-rose-100 bg-rose-50/70"
+            ? "border-amber-200 bg-[linear-gradient(180deg,rgba(254,243,199,0.95)_0%,rgba(253,230,138,0.82)_100%)]"
+            : "border-rose-200 bg-[linear-gradient(180deg,rgba(255,228,230,0.95)_0%,rgba(254,205,211,0.84)_100%)]"
       }`}
     >
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">
         {label}
       </p>
       <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">

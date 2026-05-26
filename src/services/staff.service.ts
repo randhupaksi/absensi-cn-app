@@ -1,5 +1,7 @@
 import { apiClient } from "@/services/api/client";
 import type {
+  StaffAttendanceReviewPayload,
+  StaffHomeroomAttendanceOverview,
   StaffHomeroomContext,
   StaffHomeroomDashboard,
   StaffHomeroomStudentDetail,
@@ -62,6 +64,39 @@ export async function getTeacherHomeroomStudentDetail(studentId: string) {
   try {
     const response = await apiClient.get<ApiEnvelope<StaffHomeroomStudentDetail>>(
       `/teacher/homeroom/students/${studentId}`,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function getTeacherHomeroomAttendanceOverview(params: {
+  date?: string;
+  status?: string;
+  query?: string;
+}) {
+  try {
+    const response = await apiClient.get<ApiEnvelope<StaffHomeroomAttendanceOverview>>(
+      "/teacher/homeroom/attendance-overview",
+      {
+        params,
+      },
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function reviewTeacherHomeroomAttendance(
+  attendanceId: string,
+  payload: StaffAttendanceReviewPayload,
+) {
+  try {
+    const response = await apiClient.patch<ApiEnvelope<unknown>>(
+      `/teacher/homeroom/attendance/${attendanceId}/review`,
+      payload,
     );
     return response.data.data;
   } catch (error) {

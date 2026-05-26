@@ -4,7 +4,13 @@ import { EmptyState } from "@/components/dashboard/admin/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PremiumModal } from "@/components/ui/premium-modal";
+import {
+  PremiumModal,
+  premiumModalActionsClassName,
+  premiumModalFieldClassName,
+  premiumModalHelperClassName,
+  premiumModalLabelClassName,
+} from "@/components/ui/premium-modal";
 import { RadixSelectField } from "@/components/ui/radix-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -1376,9 +1382,9 @@ function FieldGroup({
   children: ReactNode;
 }) {
   return (
-    <div className="ui-modal-field">
-      <label className="ui-modal-label">{label}</label>
-      {helper ? <p className="ui-modal-helper">{helper}</p> : null}
+    <div className={premiumModalFieldClassName}>
+      <label className={premiumModalLabelClassName}>{label}</label>
+      {helper ? <p className={premiumModalHelperClassName}>{helper}</p> : null}
       {children}
     </div>
   );
@@ -1396,7 +1402,7 @@ function ModalActions({
   submitLabel: string;
 }) {
   return (
-    <div className="ui-modal-actions">
+    <div className={premiumModalActionsClassName}>
       <Button variant="outline" className="h-12 rounded-[1.1rem] border-slate-200 px-5 text-sm font-semibold text-slate-600" onClick={onCancel} disabled={isPending}>
         Batal
       </Button>
