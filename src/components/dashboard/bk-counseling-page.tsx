@@ -11,6 +11,7 @@ import { StaffShell } from "@/components/dashboard/staff/staff-shell";
 import { bkSidebarItems } from "@/components/dashboard/staff/staff-sidebar";
 import { Button } from "@/components/ui/button";
 import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
+import { FieldError } from "@/components/ui/field-error";
 import {
   PremiumModal,
   premiumModalActionsClassName,
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/premium-modal";
 import { RadixSelectField } from "@/components/ui/radix-select";
 import { Textarea } from "@/components/ui/textarea";
+import { type FieldErrors, hasFieldErrors, validateRequired } from "@/lib/form-validation";
 import {
   createBKCounselingNote,
   deleteBKCounselingNote,
@@ -420,11 +422,22 @@ function CounselingFormModal({
   const [studentId, setStudentId] = useState(note?.student_id ?? "Pilih");
   const [title, setTitle] = useState(note?.title ?? "");
   const [body, setBody] = useState(note?.note ?? "");
+  const [errors, setErrors] = useState<FieldErrors<"student_id" | "title" | "note">>({});
 
   const studentOptions = [
     { value: "Pilih", label: "Pilih siswa" },
     ...students.map((student) => ({ value: student.id, label: `${student.name} - ${student.nis}` })),
   ];
+
+  const handleSubmit = () => {
+    const nextErrors: FieldErrors<"student_id" | "title" | "note"> = {};
+    validateRequired(nextErrors, "student_id", studentId === "Pilih" ? "" : studentId, "Siswa");
+    validateRequired(nextErrors, "title", title, "Judul catatan");
+    validateRequired(nextErrors, "note", body, "Catatan pembinaan");
+    setErrors(nextErrors);
+    if (hasFieldErrors(nextErrors)) return;
+    onSubmit({ student_id: studentId, title, note: body });
+  };
 
   return (
     <PremiumModal
@@ -445,6 +458,7 @@ function CounselingFormModal({
             placeholder="Pilih siswa"
             triggerClassName="h-12 rounded-[18px]"
           />
+          <FieldError message={errors.student_id} />
         </div>
         <div className={premiumModalFieldClassName}>
           <label className={premiumModalLabelClassName}>Judul catatan</label>
@@ -454,19 +468,21 @@ function CounselingFormModal({
             placeholder="Contoh: Follow up alfa berulang"
             className="h-12 rounded-[18px] border border-slate-300/80 bg-white/90 px-4 text-sm text-slate-700 outline-none transition-[border-color,box-shadow,background-color] hover:border-emerald-400 hover:bg-emerald-50/25 hover:shadow-[0_0_0_3px_rgba(16,185,129,0.16)] focus:border-emerald-500 focus:ring-4 focus:ring-emerald-200/80"
           />
+          <FieldError message={errors.title} />
         </div>
         <div className={premiumModalFieldClassName}>
           <label className={premiumModalLabelClassName}>Catatan pembinaan</label>
           <p className={premiumModalHelperClassName}>Tuliskan observasi, tindak lanjut, atau rekomendasi BK.</p>
           <Textarea value={body} onChange={(event) => setBody(event.target.value)} placeholder="Tulis catatan BK" className="min-h-[150px] rounded-[20px]" />
+          <FieldError message={errors.note} />
         </div>
         <div className={premiumModalActionsClassName}>
           <Button type="button" variant="outline" className="h-12 rounded-[18px] px-5" onClick={() => onOpenChange(false)}>Batal</Button>
           <Button
             type="button"
             className="h-12 rounded-[18px] bg-emerald-700 px-5 text-white hover:bg-emerald-800"
-            disabled={isPending || studentId === "Pilih" || title.trim() === "" || body.trim() === ""}
-            onClick={() => onSubmit({ student_id: studentId, title, note: body })}
+            disabled={isPending}
+            onClick={handleSubmit}
           >
             {isPending ? "Menyimpan..." : "Simpan Catatan"}
           </Button>

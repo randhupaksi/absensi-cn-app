@@ -7,9 +7,11 @@ import {
   ClipboardList,
   FileClock,
   GraduationCap,
+  History,
   LayoutDashboard,
   LogOut,
   ShieldCheck,
+  UserRound,
   UserCog,
   Users,
 } from "lucide-react";
@@ -156,4 +158,10 @@ export const bkSidebarItems = [
     icon: FileClock,
   },
   { label: "Pengajuan", href: "/dashboard/bk/submissions", icon: ClipboardList },
+] satisfies StaffSidebarItem[];
+
+export const studentSidebarItems = [
+  { label: "Dashboard", href: "/dashboard/siswa", icon: LayoutDashboard },
+  { label: "Histori Absen", href: "/dashboard/siswa/history", icon: History },
+  { label: "Profile", href: "/dashboard/siswa/profile", icon: UserRound },
 ] satisfies StaffSidebarItem[];

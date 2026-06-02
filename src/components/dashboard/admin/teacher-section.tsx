@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/dashboard/admin/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
+import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import {
   PremiumModal,
@@ -44,10 +45,16 @@ import type {
   AdminTeacherSubjectAssignmentPayload,
   AdminUser,
 } from "@/types/admin";
+import {
+  type FieldErrors,
+  hasFieldErrors,
+  validateMinLength,
+  validatePhone,
+  validateRequired,
+} from "@/lib/form-validation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { LucideIcon } from "lucide-react";
 import {
-  ArrowUpRight,
   BadgeCheck,
   BookOpen,
   FilePenLine,
@@ -1032,8 +1039,9 @@ function TeacherProfileCreateModal({
     address: "",
     is_active: true,
   });
+  const [errors, setErrors] = useState<FieldErrors<keyof TeacherProfileCreatePayload>>({});
 
-  const reset = () =>
+  const reset = () => {
     setForm({
       name: "",
       username: "",
@@ -1045,12 +1053,21 @@ function TeacherProfileCreateModal({
       address: "",
       is_active: true,
     });
+    setErrors({});
+  };
 
   const handleOpenChange = (nextOpen: boolean) => {
     onOpenChange(nextOpen);
     if (!nextOpen) {
       reset();
     }
+  };
+
+  const handleSubmit = () => {
+    const nextErrors = validateTeacherProfileForm(form, false);
+    setErrors(nextErrors);
+    if (hasFieldErrors(nextErrors)) return;
+    onSubmit(form);
   };
 
   return (
@@ -1072,6 +1089,7 @@ function TeacherProfileCreateModal({
               placeholder="Masukkan nama guru"
               className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]"
             />
+            <FieldError message={errors.name} />
           </FieldGroup>
           <FieldGroup label="Username Login">
             <Input
@@ -1082,6 +1100,7 @@ function TeacherProfileCreateModal({
               placeholder="Masukkan username guru"
               className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]"
             />
+            <FieldError message={errors.username} />
           </FieldGroup>
         </div>
 
@@ -1094,6 +1113,7 @@ function TeacherProfileCreateModal({
             placeholder="Minimal 6 karakter"
             className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]"
           />
+          <FieldError message={errors.password} />
         </FieldGroup>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -1106,6 +1126,7 @@ function TeacherProfileCreateModal({
               placeholder="Masukkan NIP guru"
               className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]"
             />
+            <FieldError message={errors.nip} />
           </FieldGroup>
           <FieldGroup label="NUPTK">
             <Input
@@ -1116,6 +1137,7 @@ function TeacherProfileCreateModal({
               placeholder="Masukkan NUPTK guru"
               className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]"
             />
+            <FieldError message={errors.nuptk} />
           </FieldGroup>
         </div>
 
@@ -1130,6 +1152,7 @@ function TeacherProfileCreateModal({
                 { value: "FEMALE", label: "Perempuan" },
               ]}
             />
+            <FieldError message={errors.gender} />
           </FieldGroup>
           <FieldGroup label="Status Aktif">
             <RadixSelectField
@@ -1143,6 +1166,7 @@ function TeacherProfileCreateModal({
                 { value: "false", label: "Nonaktif" },
               ]}
             />
+            <FieldError message={errors.is_active} />
           </FieldGroup>
         </div>
 
@@ -1156,6 +1180,7 @@ function TeacherProfileCreateModal({
               placeholder="08xxxxxxxxxx"
               className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]"
             />
+            <FieldError message={errors.phone} />
           </FieldGroup>
         </div>
 
@@ -1171,12 +1196,13 @@ function TeacherProfileCreateModal({
             placeholder="Masukkan alamat guru"
             className="min-h-[140px] rounded-[1.4rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 py-3 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]"
           />
+          <FieldError message={errors.address} />
         </FieldGroup>
 
         <ModalActions
           isPending={isPending}
           onCancel={() => handleOpenChange(false)}
-          onSubmit={() => onSubmit(form)}
+          onSubmit={handleSubmit}
           submitLabel="Simpan Profil Guru"
         />
       </div>
@@ -1208,6 +1234,7 @@ function TeacherProfileEditModal({
     address: "",
     is_active: true,
   });
+  const [errors, setErrors] = useState<FieldErrors<keyof TeacherProfileCreatePayload>>({});
 
   useEffect(() => {
     if (!teacher) return;
@@ -1222,7 +1249,15 @@ function TeacherProfileEditModal({
       address: teacher.address ?? "",
       is_active: teacher.is_active,
     });
+    setErrors({});
   }, [teacher]);
+
+  const handleSubmit = () => {
+    const nextErrors = validateTeacherProfileForm(form, true);
+    setErrors(nextErrors);
+    if (hasFieldErrors(nextErrors)) return;
+    onSubmit(form);
+  };
 
   if (!teacher) return null;
 
@@ -1238,43 +1273,52 @@ function TeacherProfileEditModal({
         <div className="grid gap-4 md:grid-cols-2">
           <FieldGroup label="Nama Guru">
             <Input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="Masukkan nama guru" className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]" />
+            <FieldError message={errors.name} />
           </FieldGroup>
           <FieldGroup label="Username Login">
             <Input value={form.username} onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))} placeholder="Masukkan username guru" className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]" />
+            <FieldError message={errors.username} />
           </FieldGroup>
         </div>
 
         <FieldGroup label="Password Baru">
           <Input value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} placeholder="Kosongkan jika tidak diubah" className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]" />
+          <FieldError message={errors.password} />
         </FieldGroup>
 
         <div className="grid gap-4 md:grid-cols-2">
           <FieldGroup label="NIP">
             <Input value={form.nip} onChange={(event) => setForm((current) => ({ ...current, nip: event.target.value }))} placeholder="Masukkan NIP guru" className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]" />
+            <FieldError message={errors.nip} />
           </FieldGroup>
           <FieldGroup label="NUPTK">
             <Input value={form.nuptk} onChange={(event) => setForm((current) => ({ ...current, nuptk: event.target.value }))} placeholder="Masukkan NUPTK guru" className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]" />
+            <FieldError message={errors.nuptk} />
           </FieldGroup>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <FieldGroup label="Jenis Kelamin">
             <RadixSelectField value={form.gender} onValueChange={(value) => setForm((current) => ({ ...current, gender: value }))} placeholder="Pilih jenis kelamin" options={[{ value: "MALE", label: "Laki-laki" }, { value: "FEMALE", label: "Perempuan" }]} />
+            <FieldError message={errors.gender} />
           </FieldGroup>
           <FieldGroup label="Status Aktif">
             <RadixSelectField value={String(form.is_active)} onValueChange={(value) => setForm((current) => ({ ...current, is_active: value === "true" }))} placeholder="Pilih status aktif" options={[{ value: "true", label: "Aktif" }, { value: "false", label: "Nonaktif" }]} />
+            <FieldError message={errors.is_active} />
           </FieldGroup>
         </div>
 
         <FieldGroup label="Telepon">
           <Input value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} placeholder="08xxxxxxxxxx" className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]" />
+          <FieldError message={errors.phone} />
         </FieldGroup>
 
         <FieldGroup label="Alamat" helper="Gunakan alamat singkat yang mudah dibaca admin untuk kebutuhan data master.">
           <Textarea value={form.address} onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))} placeholder="Masukkan alamat guru" className="min-h-[140px] rounded-[1.4rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 py-3 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]" />
+          <FieldError message={errors.address} />
         </FieldGroup>
 
-        <ModalActions isPending={isPending} onCancel={() => onOpenChange(false)} onSubmit={() => onSubmit(form)} submitLabel="Update Profil Guru" />
+        <ModalActions isPending={isPending} onCancel={() => onOpenChange(false)} onSubmit={handleSubmit} submitLabel="Update Profil Guru" />
       </div>
     </PremiumModal>
   );
@@ -1306,8 +1350,9 @@ function TeacherSubjectAssignmentCreateModal({
     school_year_id: "",
     is_active: true,
   });
+  const [errors, setErrors] = useState<FieldErrors<keyof AdminTeacherSubjectAssignmentPayload>>({});
 
-  const reset = () =>
+  const reset = () => {
     setForm({
       teacher_id: "",
       subject_id: "",
@@ -1315,12 +1360,21 @@ function TeacherSubjectAssignmentCreateModal({
       school_year_id: "",
       is_active: true,
     });
+    setErrors({});
+  };
 
   const handleOpenChange = (nextOpen: boolean) => {
     onOpenChange(nextOpen);
     if (!nextOpen) {
       reset();
     }
+  };
+
+  const handleSubmit = () => {
+    const nextErrors = validateTeacherSubjectAssignmentForm(form);
+    setErrors(nextErrors);
+    if (hasFieldErrors(nextErrors)) return;
+    onSubmit(form);
   };
 
   return (
@@ -1346,6 +1400,7 @@ function TeacherSubjectAssignmentCreateModal({
                 description: teacher.nip || teacher.username || teacher.id,
               }))}
             />
+            <FieldError message={errors.teacher_id} />
           </FieldGroup>
           <FieldGroup label="Mapel">
             <RadixSelectField
@@ -1360,6 +1415,7 @@ function TeacherSubjectAssignmentCreateModal({
                 description: subject.code,
               }))}
             />
+            <FieldError message={errors.subject_id} />
           </FieldGroup>
         </div>
 
@@ -1377,6 +1433,7 @@ function TeacherSubjectAssignmentCreateModal({
                 description: item.school_year_name,
               }))}
             />
+            <FieldError message={errors.class_id} />
           </FieldGroup>
           <FieldGroup label="Tahun Ajaran">
             <RadixSelectField
@@ -1388,9 +1445,9 @@ function TeacherSubjectAssignmentCreateModal({
               options={schoolYears.map((item) => ({
                 value: item.id,
                 label: item.name,
-                description: `${item.start_year} - ${item.end_year}`,
               }))}
             />
+            <FieldError message={errors.school_year_id} />
           </FieldGroup>
         </div>
 
@@ -1406,12 +1463,13 @@ function TeacherSubjectAssignmentCreateModal({
               { value: "false", label: "Nonaktif" },
             ]}
           />
+          <FieldError message={errors.is_active} />
         </FieldGroup>
 
         <ModalActions
           isPending={isPending}
           onCancel={() => handleOpenChange(false)}
-          onSubmit={() => onSubmit(form)}
+          onSubmit={handleSubmit}
           submitLabel="Simpan Assignment Mapel"
         />
       </div>
@@ -1447,6 +1505,7 @@ function TeacherSubjectAssignmentEditModal({
     school_year_id: "",
     is_active: true,
   });
+  const [errors, setErrors] = useState<FieldErrors<keyof AdminTeacherSubjectAssignmentPayload>>({});
 
   useEffect(() => {
     if (!assignment) return;
@@ -1457,7 +1516,15 @@ function TeacherSubjectAssignmentEditModal({
       school_year_id: assignment.school_year_id,
       is_active: assignment.is_active,
     });
+    setErrors({});
   }, [assignment]);
+
+  const handleSubmit = () => {
+    const nextErrors = validateTeacherSubjectAssignmentForm(form);
+    setErrors(nextErrors);
+    if (hasFieldErrors(nextErrors)) return;
+    onSubmit(form);
+  };
 
   if (!assignment) return null;
 
@@ -1467,26 +1534,31 @@ function TeacherSubjectAssignmentEditModal({
         <div className="grid gap-4 md:grid-cols-2">
           <FieldGroup label="Guru">
             <RadixSelectField value={form.teacher_id} onValueChange={(value) => setForm((current) => ({ ...current, teacher_id: value }))} placeholder="Pilih guru" options={teacherProfiles.map((teacher) => ({ value: teacher.id, label: teacher.name, description: teacher.nip || teacher.username || teacher.id }))} />
+            <FieldError message={errors.teacher_id} />
           </FieldGroup>
           <FieldGroup label="Mapel">
             <RadixSelectField value={form.subject_id} onValueChange={(value) => setForm((current) => ({ ...current, subject_id: value }))} placeholder="Pilih mapel" options={subjects.map((subject) => ({ value: subject.id, label: subject.name, description: subject.code }))} />
+            <FieldError message={errors.subject_id} />
           </FieldGroup>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <FieldGroup label="Kelas">
             <RadixSelectField value={form.class_id} onValueChange={(value) => setForm((current) => ({ ...current, class_id: value }))} placeholder="Pilih kelas" options={classes.map((item) => ({ value: item.id, label: item.display_name, description: item.school_year_name }))} />
+            <FieldError message={errors.class_id} />
           </FieldGroup>
           <FieldGroup label="Tahun Ajaran">
-            <RadixSelectField value={form.school_year_id} onValueChange={(value) => setForm((current) => ({ ...current, school_year_id: value }))} placeholder="Pilih tahun ajaran" options={schoolYears.map((item) => ({ value: item.id, label: item.name, description: `${item.start_year} - ${item.end_year}` }))} />
+            <RadixSelectField value={form.school_year_id} onValueChange={(value) => setForm((current) => ({ ...current, school_year_id: value }))} placeholder="Pilih tahun ajaran" options={schoolYears.map((item) => ({ value: item.id, label: item.name }))} />
+            <FieldError message={errors.school_year_id} />
           </FieldGroup>
         </div>
 
         <FieldGroup label="Status Assignment">
           <RadixSelectField value={String(form.is_active)} onValueChange={(value) => setForm((current) => ({ ...current, is_active: value === "true" }))} placeholder="Pilih status" options={[{ value: "true", label: "Aktif" }, { value: "false", label: "Nonaktif" }]} />
+          <FieldError message={errors.is_active} />
         </FieldGroup>
 
-        <ModalActions isPending={isPending} onCancel={() => onOpenChange(false)} onSubmit={() => onSubmit(form)} submitLabel="Update Assignment Mapel" />
+        <ModalActions isPending={isPending} onCancel={() => onOpenChange(false)} onSubmit={handleSubmit} submitLabel="Update Assignment Mapel" />
       </div>
     </PremiumModal>
   );
@@ -1515,20 +1587,30 @@ function HomeroomAssignmentCreateModal({
     school_year_id: "",
     is_active: true,
   });
+  const [errors, setErrors] = useState<FieldErrors<keyof AdminHomeroomAssignmentPayload>>({});
 
-  const reset = () =>
+  const reset = () => {
     setForm({
       teacher_id: "",
       class_id: "",
       school_year_id: "",
       is_active: true,
     });
+    setErrors({});
+  };
 
   const handleOpenChange = (nextOpen: boolean) => {
     onOpenChange(nextOpen);
     if (!nextOpen) {
       reset();
     }
+  };
+
+  const handleSubmit = () => {
+    const nextErrors = validateHomeroomAssignmentForm(form);
+    setErrors(nextErrors);
+    if (hasFieldErrors(nextErrors)) return;
+    onSubmit(form);
   };
 
   return (
@@ -1554,6 +1636,7 @@ function HomeroomAssignmentCreateModal({
                 description: teacher.nip || teacher.username || teacher.id,
               }))}
             />
+            <FieldError message={errors.teacher_id} />
           </FieldGroup>
           <FieldGroup label="Kelas">
             <RadixSelectField
@@ -1568,6 +1651,7 @@ function HomeroomAssignmentCreateModal({
                 description: item.school_year_name,
               }))}
             />
+            <FieldError message={errors.class_id} />
           </FieldGroup>
         </div>
 
@@ -1582,9 +1666,9 @@ function HomeroomAssignmentCreateModal({
               options={schoolYears.map((item) => ({
                 value: item.id,
                 label: item.name,
-                description: `${item.start_year} - ${item.end_year}`,
               }))}
             />
+            <FieldError message={errors.school_year_id} />
           </FieldGroup>
           <FieldGroup label="Status Assignment">
             <RadixSelectField
@@ -1598,13 +1682,14 @@ function HomeroomAssignmentCreateModal({
                 { value: "false", label: "Nonaktif" },
               ]}
             />
+            <FieldError message={errors.is_active} />
           </FieldGroup>
         </div>
 
         <ModalActions
           isPending={isPending}
           onCancel={() => handleOpenChange(false)}
-          onSubmit={() => onSubmit(form)}
+          onSubmit={handleSubmit}
           submitLabel="Simpan Assignment Walas"
         />
       </div>
@@ -1637,6 +1722,7 @@ function HomeroomAssignmentEditModal({
     school_year_id: "",
     is_active: true,
   });
+  const [errors, setErrors] = useState<FieldErrors<keyof AdminHomeroomAssignmentPayload>>({});
 
   useEffect(() => {
     if (!assignment) return;
@@ -1646,7 +1732,15 @@ function HomeroomAssignmentEditModal({
       school_year_id: assignment.school_year_id,
       is_active: assignment.is_active,
     });
+    setErrors({});
   }, [assignment]);
+
+  const handleSubmit = () => {
+    const nextErrors = validateHomeroomAssignmentForm(form);
+    setErrors(nextErrors);
+    if (hasFieldErrors(nextErrors)) return;
+    onSubmit(form);
+  };
 
   if (!assignment) return null;
 
@@ -1656,22 +1750,26 @@ function HomeroomAssignmentEditModal({
         <div className="grid gap-4 md:grid-cols-2">
           <FieldGroup label="Guru">
             <RadixSelectField value={form.teacher_id} onValueChange={(value) => setForm((current) => ({ ...current, teacher_id: value }))} placeholder="Pilih guru" options={teacherProfiles.map((teacher) => ({ value: teacher.id, label: teacher.name, description: teacher.nip || teacher.username || teacher.id }))} />
+            <FieldError message={errors.teacher_id} />
           </FieldGroup>
           <FieldGroup label="Kelas">
             <RadixSelectField value={form.class_id} onValueChange={(value) => setForm((current) => ({ ...current, class_id: value }))} placeholder="Pilih kelas walas" options={classes.map((item) => ({ value: item.id, label: item.display_name, description: item.school_year_name }))} />
+            <FieldError message={errors.class_id} />
           </FieldGroup>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <FieldGroup label="Tahun Ajaran">
-            <RadixSelectField value={form.school_year_id} onValueChange={(value) => setForm((current) => ({ ...current, school_year_id: value }))} placeholder="Pilih tahun ajaran" options={schoolYears.map((item) => ({ value: item.id, label: item.name, description: `${item.start_year} - ${item.end_year}` }))} />
+            <RadixSelectField value={form.school_year_id} onValueChange={(value) => setForm((current) => ({ ...current, school_year_id: value }))} placeholder="Pilih tahun ajaran" options={schoolYears.map((item) => ({ value: item.id, label: item.name }))} />
+            <FieldError message={errors.school_year_id} />
           </FieldGroup>
           <FieldGroup label="Status Assignment">
             <RadixSelectField value={String(form.is_active)} onValueChange={(value) => setForm((current) => ({ ...current, is_active: value === "true" }))} placeholder="Pilih status" options={[{ value: "true", label: "Aktif" }, { value: "false", label: "Nonaktif" }]} />
+            <FieldError message={errors.is_active} />
           </FieldGroup>
         </div>
 
-        <ModalActions isPending={isPending} onCancel={() => onOpenChange(false)} onSubmit={() => onSubmit(form)} submitLabel="Update Assignment Walas" />
+        <ModalActions isPending={isPending} onCancel={() => onOpenChange(false)} onSubmit={handleSubmit} submitLabel="Update Assignment Walas" />
       </div>
     </PremiumModal>
   );
@@ -1869,16 +1967,12 @@ function StatCard({
           </p>
         </div>
 
-        <div className="flex flex-col items-center gap-2 text-right">
+        <div className="flex flex-col items-center text-right">
           <span
             className={`inline-flex size-12 items-center justify-center rounded-[18px] bg-gradient-to-br ${accentClass} text-white shadow-[0_14px_28px_rgba(15,23,42,0.16)]`}
           >
             <Icon className="size-5" />
           </span>
-          <div className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50/80 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-            Live
-            <ArrowUpRight className="size-3.5" />
-          </div>
         </div>
       </div>
     </div>
@@ -1911,6 +2005,46 @@ type TeacherProfileCreatePayload = {
   address: string;
   is_active: boolean;
 };
+
+function validateTeacherProfileForm(
+  form: TeacherProfileCreatePayload,
+  isEdit: boolean,
+): FieldErrors<keyof TeacherProfileCreatePayload> {
+  const errors: FieldErrors<keyof TeacherProfileCreatePayload> = {};
+  validateRequired(errors, "name", form.name, "Nama guru");
+  validateRequired(errors, "username", form.username, "Username login");
+  validateMinLength(errors, "password", form.password, 6, isEdit ? "Password baru" : "Password login", {
+    allowEmpty: isEdit,
+  });
+  validateRequired(errors, "nip", form.nip, "NIP");
+  validateRequired(errors, "nuptk", form.nuptk, "NUPTK");
+  validateRequired(errors, "gender", form.gender, "Jenis kelamin");
+  validatePhone(errors, "phone", form.phone, "Telepon", { allowEmpty: true });
+  return errors;
+}
+
+function validateTeacherSubjectAssignmentForm(
+  form: AdminTeacherSubjectAssignmentPayload,
+): FieldErrors<keyof AdminTeacherSubjectAssignmentPayload> {
+  const errors: FieldErrors<keyof AdminTeacherSubjectAssignmentPayload> = {};
+  validateRequired(errors, "teacher_id", form.teacher_id, "Guru");
+  validateRequired(errors, "subject_id", form.subject_id, "Mapel");
+  validateRequired(errors, "class_id", form.class_id, "Kelas");
+  validateRequired(errors, "school_year_id", form.school_year_id, "Tahun ajaran");
+  validateRequired(errors, "is_active", String(form.is_active), "Status assignment");
+  return errors;
+}
+
+function validateHomeroomAssignmentForm(
+  form: AdminHomeroomAssignmentPayload,
+): FieldErrors<keyof AdminHomeroomAssignmentPayload> {
+  const errors: FieldErrors<keyof AdminHomeroomAssignmentPayload> = {};
+  validateRequired(errors, "teacher_id", form.teacher_id, "Guru");
+  validateRequired(errors, "class_id", form.class_id, "Kelas");
+  validateRequired(errors, "school_year_id", form.school_year_id, "Tahun ajaran");
+  validateRequired(errors, "is_active", String(form.is_active), "Status assignment");
+  return errors;
+}
 
 function getInitials(name: string) {
   const words = name.trim().split(/\s+/).filter(Boolean);

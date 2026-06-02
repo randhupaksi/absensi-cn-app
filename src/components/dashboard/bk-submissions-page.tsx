@@ -14,6 +14,7 @@ import { KpiCard } from "@/components/dashboard/admin/kpi-card";
 import { StaffShell } from "@/components/dashboard/staff/staff-shell";
 import { bkSidebarItems } from "@/components/dashboard/staff/staff-sidebar";
 import { Button } from "@/components/ui/button";
+import { FieldError } from "@/components/ui/field-error";
 import {
   PremiumModal,
   premiumModalActionsClassName,
@@ -24,6 +25,7 @@ import {
 } from "@/components/ui/premium-modal";
 import { RadixSelectField } from "@/components/ui/radix-select";
 import { Textarea } from "@/components/ui/textarea";
+import { type FieldErrors, hasFieldErrors, validateRequired } from "@/lib/form-validation";
 import { getBKSubmissionsOverview, reviewBKSubmission } from "@/services/staff.service";
 import type { StaffSubmission } from "@/types/staff";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -416,6 +418,16 @@ function SubmissionReviewModal({
 }) {
   const [status, setStatus] = useState(normalizeSubmissionStatus(submission.status));
   const [reviewNote, setReviewNote] = useState(submission.review_note || "");
+  const [errors, setErrors] = useState<FieldErrors<"status" | "review_note">>({});
+
+  const handleSubmit = () => {
+    const nextErrors: FieldErrors<"status" | "review_note"> = {};
+    validateRequired(nextErrors, "status", status, "Status final");
+    validateRequired(nextErrors, "review_note", reviewNote, "Catatan tanggapan");
+    setErrors(nextErrors);
+    if (hasFieldErrors(nextErrors)) return;
+    onSubmit({ status, review_note: reviewNote });
+  };
 
   return (
     <PremiumModal
@@ -434,15 +446,17 @@ function SubmissionReviewModal({
           <div className={premiumModalFieldClassName}>
             <label className={premiumModalLabelClassName}>Status final</label>
             <RadixSelectField value={status} onValueChange={setStatus} options={reviewStatusOptions} placeholder="Pilih status akhir" triggerClassName="h-12 rounded-[18px]" />
+            <FieldError message={errors.status} />
           </div>
           <div className={premiumModalFieldClassName}>
             <label className={premiumModalLabelClassName}>Catatan tanggapan</label>
             <p className={premiumModalHelperClassName}>Catatan ini tersimpan di riwayat review pengajuan siswa.</p>
             <Textarea value={reviewNote} onChange={(event) => setReviewNote(event.target.value)} placeholder="Tulis tanggapan BK" className="min-h-[140px] rounded-[20px]" />
+            <FieldError message={errors.review_note} />
           </div>
           <div className={premiumModalActionsClassName}>
             <Button type="button" variant="outline" className="h-12 rounded-[18px] px-5" onClick={() => onOpenChange(false)}>Batal</Button>
-            <Button type="button" className="h-12 rounded-[18px] bg-emerald-700 px-5 text-white hover:bg-emerald-800" disabled={isPending} onClick={() => onSubmit({ status, review_note: reviewNote })}>
+            <Button type="button" className="h-12 rounded-[18px] bg-emerald-700 px-5 text-white hover:bg-emerald-800" disabled={isPending} onClick={handleSubmit}>
               {isPending ? "Menyimpan..." : "Simpan Tanggapan"}
             </Button>
           </div>

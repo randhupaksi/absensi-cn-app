@@ -6,6 +6,7 @@ import { StaffShell } from "@/components/dashboard/staff/staff-shell";
 import { walasSidebarItems } from "@/components/dashboard/staff/staff-sidebar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { FieldError } from "@/components/ui/field-error";
 import {
   PremiumModal,
   premiumModalActionsClassName,
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/premium-modal";
 import { RadixSelectField } from "@/components/ui/radix-select";
 import { Textarea } from "@/components/ui/textarea";
+import { type FieldErrors, hasFieldErrors, validateRequired } from "@/lib/form-validation";
 import {
   getTeacherHomeroomSubmissionsOverview,
   reviewTeacherHomeroomSubmission,
@@ -654,12 +656,23 @@ function SubmissionReviewModal({
 }) {
   const [status, setStatus] = useState("menunggu");
   const [reviewNote, setReviewNote] = useState("");
+  const [errors, setErrors] = useState<FieldErrors<"status" | "review_note">>({});
 
   useEffect(() => {
     if (!submission) return;
     setStatus(normalizeSubmissionStatus(submission.status));
     setReviewNote(submission.review_note || "");
+    setErrors({});
   }, [submission]);
+
+  const handleSubmit = () => {
+    const nextErrors: FieldErrors<"status" | "review_note"> = {};
+    validateRequired(nextErrors, "status", status, "Status final");
+    validateRequired(nextErrors, "review_note", reviewNote, "Catatan tanggapan");
+    setErrors(nextErrors);
+    if (hasFieldErrors(nextErrors)) return;
+    onSubmit({ status, review_note: reviewNote });
+  };
 
   return (
     <PremiumModal
@@ -700,6 +713,7 @@ function SubmissionReviewModal({
                 placeholder="Pilih status akhir"
                 triggerClassName="h-12 rounded-[18px]"
               />
+              <FieldError message={errors.status} />
             </div>
             <div className={premiumModalFieldClassName}>
               <label className={premiumModalLabelClassName}>Lampiran</label>
@@ -720,6 +734,7 @@ function SubmissionReviewModal({
               placeholder="Tulis tanggapan atau alasan keputusan walas"
               className="min-h-[140px] rounded-[20px]"
             />
+            <FieldError message={errors.review_note} />
           </div>
 
           <div className={premiumModalActionsClassName}>
@@ -735,12 +750,7 @@ function SubmissionReviewModal({
               type="button"
               className="h-12 rounded-[18px] bg-emerald-700 px-5 text-white hover:bg-emerald-800"
               disabled={isPending}
-              onClick={() =>
-                onSubmit({
-                  status,
-                  review_note: reviewNote,
-                })
-              }
+              onClick={handleSubmit}
             >
               {isPending ? "Menyimpan..." : "Simpan Tanggapan"}
             </Button>

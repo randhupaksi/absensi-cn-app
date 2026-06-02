@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/dashboard/admin/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
+import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import {
   PremiumModal,
@@ -11,11 +12,17 @@ import {
   premiumModalFieldClassName,
   premiumModalLabelClassName,
 } from "@/components/ui/premium-modal";
-import { Search, ShieldCheck, SlidersHorizontal, Sparkles, LayoutPanelTop, LineChart, ArrowUpRight, BadgeCheck, UserCog, KeyRound, PencilLine, Trash2, FilePenLine, Plus } from "lucide-react";
+import { Search, ShieldCheck, SlidersHorizontal, Sparkles, LayoutPanelTop, LineChart, BadgeCheck, UserCog, KeyRound, PencilLine, Trash2, FilePenLine, Plus } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import type { AdminUser, AdminUserPayload } from "@/types/admin";
+import {
+  type FieldErrors,
+  hasFieldErrors,
+  validateMinLength,
+  validateRequired,
+} from "@/lib/form-validation";
 import { createAdminUser, deleteAdminUser, updateAdminUser } from "@/services/admin.service";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "motion/react";
@@ -332,8 +339,9 @@ function AdminCreateModal({
     nis: "",
     password: "",
   });
+  const [errors, setErrors] = useState<FieldErrors<keyof AdminUserPayload>>({});
 
-  const reset = () =>
+  const reset = () => {
     setForm({
       name: "",
       role: "ADMIN",
@@ -341,10 +349,19 @@ function AdminCreateModal({
       nis: "",
       password: "",
     });
+    setErrors({});
+  };
 
   const handleOpenChange = (nextOpen: boolean) => {
     onOpenChange(nextOpen);
     if (!nextOpen) reset();
+  };
+
+  const handleSubmit = () => {
+    const nextErrors = validateAdminUserForm(form, false);
+    setErrors(nextErrors);
+    if (hasFieldErrors(nextErrors)) return;
+    onSubmit(form);
   };
 
   return (
@@ -353,21 +370,24 @@ function AdminCreateModal({
         <div className="grid gap-4 md:grid-cols-2">
           <FieldGroup label="Nama Administrator">
             <Input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="Masukkan nama admin" className={inputClassName} />
+            <FieldError message={errors.name} />
           </FieldGroup>
           <FieldGroup label="Username Login">
             <Input value={form.username} onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))} placeholder="Masukkan username admin" className={inputClassName} />
+            <FieldError message={errors.username} />
           </FieldGroup>
         </div>
 
         <FieldGroup label="Password Login">
           <Input value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} placeholder="Minimal 6 karakter" className={inputClassName} />
+          <FieldError message={errors.password} />
         </FieldGroup>
 
         <div className={premiumModalActionsClassName}>
           <Button variant="outline" className="h-12 rounded-[1.1rem] border-slate-200 px-5 text-sm font-semibold text-slate-600" onClick={() => handleOpenChange(false)} disabled={isPending}>
             Batal
           </Button>
-          <Button className="h-12 rounded-[1.1rem] bg-[linear-gradient(135deg,#0f766e_0%,#166534_100%)] px-5 text-sm font-semibold text-white shadow-[0_20px_40px_rgba(22,101,52,0.2)] hover:opacity-95" onClick={() => onSubmit(form)} disabled={isPending}>
+          <Button className="h-12 rounded-[1.1rem] bg-[linear-gradient(135deg,#0f766e_0%,#166534_100%)] px-5 text-sm font-semibold text-white shadow-[0_20px_40px_rgba(22,101,52,0.2)] hover:opacity-95" onClick={handleSubmit} disabled={isPending}>
             <Sparkles className="size-4" />
             {isPending ? "Menyimpan..." : "Simpan Admin"}
           </Button>
@@ -397,6 +417,7 @@ function AdminEditModal({
     nis: "",
     password: "",
   });
+  const [errors, setErrors] = useState<FieldErrors<keyof AdminUserPayload>>({});
 
   useEffect(() => {
     if (!user) return;
@@ -407,7 +428,15 @@ function AdminEditModal({
       nis: "",
       password: "",
     });
+    setErrors({});
   }, [user]);
+
+  const handleSubmit = () => {
+    const nextErrors = validateAdminUserForm(form, true);
+    setErrors(nextErrors);
+    if (hasFieldErrors(nextErrors)) return;
+    onSubmit(form);
+  };
 
   if (!user) return null;
 
@@ -417,21 +446,24 @@ function AdminEditModal({
         <div className="grid gap-4 md:grid-cols-2">
           <FieldGroup label="Nama Administrator">
             <Input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="Masukkan nama admin" className={inputClassName} />
+            <FieldError message={errors.name} />
           </FieldGroup>
           <FieldGroup label="Username Login">
             <Input value={form.username} onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))} placeholder="Masukkan username admin" className={inputClassName} />
+            <FieldError message={errors.username} />
           </FieldGroup>
         </div>
 
         <FieldGroup label="Password Baru">
           <Input value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} placeholder="Kosongkan jika tidak diubah" className={inputClassName} />
+          <FieldError message={errors.password} />
         </FieldGroup>
 
         <div className={premiumModalActionsClassName}>
           <Button variant="outline" className="h-12 rounded-[1.1rem] border-slate-200 px-5 text-sm font-semibold text-slate-600" onClick={() => onOpenChange(false)} disabled={isPending}>
             Batal
           </Button>
-          <Button className="h-12 rounded-[1.1rem] bg-[linear-gradient(135deg,#0f766e_0%,#166534_100%)] px-5 text-sm font-semibold text-white shadow-[0_20px_40px_rgba(22,101,52,0.2)] hover:opacity-95" onClick={() => onSubmit(form)} disabled={isPending}>
+          <Button className="h-12 rounded-[1.1rem] bg-[linear-gradient(135deg,#0f766e_0%,#166534_100%)] px-5 text-sm font-semibold text-white shadow-[0_20px_40px_rgba(22,101,52,0.2)] hover:opacity-95" onClick={handleSubmit} disabled={isPending}>
             <Sparkles className="size-4" />
             {isPending ? "Menyimpan..." : "Update Admin"}
           </Button>
@@ -460,14 +492,10 @@ function AdminStatCard({
           <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-slate-400">{label}</p>
           <p className="text-[2.15rem] font-semibold tracking-[-0.04em] text-slate-950">{value}</p>
         </div>
-        <div className="flex flex-col items-center gap-2 text-right">
+        <div className="flex flex-col items-center text-right">
           <span className={`inline-flex size-12 items-center justify-center rounded-[18px] bg-gradient-to-br ${accentClass} text-white shadow-[0_14px_28px_rgba(15,23,42,0.16)]`}>
             <Icon className="size-5" />
           </span>
-          <div className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50/80 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-            Live
-            <ArrowUpRight className="size-3.5" />
-          </div>
         </div>
       </div>
     </div>
@@ -508,6 +536,19 @@ function getInitials(name: string) {
   if (words.length === 0) return "A";
   if (words.length === 1) return words[0].slice(0, 1).toUpperCase();
   return `${words[0][0] ?? ""}${words[1][0] ?? ""}`.toUpperCase();
+}
+
+function validateAdminUserForm(
+  form: AdminUserPayload,
+  isEdit: boolean,
+): FieldErrors<keyof AdminUserPayload> {
+  const errors: FieldErrors<keyof AdminUserPayload> = {};
+  validateRequired(errors, "name", form.name, "Nama administrator");
+  validateRequired(errors, "username", form.username, "Username login");
+  validateMinLength(errors, "password", form.password, 6, isEdit ? "Password baru" : "Password login", {
+    allowEmpty: isEdit,
+  });
+  return errors;
 }
 
 const inputClassName =

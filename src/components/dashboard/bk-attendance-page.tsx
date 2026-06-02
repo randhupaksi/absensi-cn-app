@@ -14,6 +14,7 @@ import { StaffShell } from "@/components/dashboard/staff/staff-shell";
 import { bkSidebarItems } from "@/components/dashboard/staff/staff-sidebar";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { FieldError } from "@/components/ui/field-error";
 import { Popover, PopoverContent, PopoverHeader, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
 import {
   PremiumModal,
@@ -24,6 +25,7 @@ import {
 } from "@/components/ui/premium-modal";
 import { RadixSelectField } from "@/components/ui/radix-select";
 import { Textarea } from "@/components/ui/textarea";
+import { type FieldErrors, hasFieldErrors, validateRequired } from "@/lib/form-validation";
 import { getBKAttendanceOverview, reviewBKAttendance } from "@/services/staff.service";
 import type { StaffAttendanceRecord, StaffAttendanceReviewPayload } from "@/types/staff";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -428,6 +430,16 @@ function AttendanceReviewModal({
   const [verificationNote, setVerificationNote] = useState(
     record.verification_note || record.notes || "",
   );
+  const [errors, setErrors] = useState<FieldErrors<"status" | "verification_note">>({});
+
+  const handleSubmit = () => {
+    const nextErrors: FieldErrors<"status" | "verification_note"> = {};
+    validateRequired(nextErrors, "status", status, "Status final");
+    validateRequired(nextErrors, "verification_note", verificationNote, "Catatan review BK");
+    setErrors(nextErrors);
+    if (hasFieldErrors(nextErrors)) return;
+    onSubmit({ status, verification_note: verificationNote });
+  };
 
   return (
     <PremiumModal
@@ -449,6 +461,7 @@ function AttendanceReviewModal({
             <div className={premiumModalFieldClassName}>
               <label className={premiumModalLabelClassName}>Status final</label>
               <RadixSelectField value={status} onValueChange={setStatus} options={reviewStatusOptions} placeholder="Pilih status final" triggerClassName="h-12 rounded-[18px]" />
+              <FieldError message={errors.status} />
             </div>
             <div className={premiumModalFieldClassName}>
               <label className={premiumModalLabelClassName}>Verifikasi</label>
@@ -462,6 +475,7 @@ function AttendanceReviewModal({
             <label className={premiumModalLabelClassName}>Catatan review BK</label>
             <p className={premiumModalHelperClassName}>Catatan ini membantu membaca alasan perubahan status.</p>
             <Textarea value={verificationNote} onChange={(event) => setVerificationNote(event.target.value)} placeholder="Tulis catatan review BK" className="min-h-[140px] rounded-[20px]" />
+            <FieldError message={errors.verification_note} />
           </div>
 
           <div className={premiumModalActionsClassName}>
@@ -470,7 +484,7 @@ function AttendanceReviewModal({
               type="button"
               className="h-12 rounded-[18px] bg-emerald-700 px-5 text-white hover:bg-emerald-800"
               disabled={isPending}
-              onClick={() => onSubmit({ status, verification_note: verificationNote })}
+              onClick={handleSubmit}
             >
               {isPending ? "Menyimpan..." : "Simpan Review"}
             </Button>

@@ -14,6 +14,7 @@ import { KpiCard } from "@/components/dashboard/admin/kpi-card";
 import { StaffShell } from "@/components/dashboard/staff/staff-shell";
 import { bkSidebarItems } from "@/components/dashboard/staff/staff-sidebar";
 import { Button } from "@/components/ui/button";
+import { FieldError } from "@/components/ui/field-error";
 import {
   PremiumModal,
   premiumModalActionsClassName,
@@ -24,6 +25,7 @@ import {
 } from "@/components/ui/premium-modal";
 import { RadixSelectField } from "@/components/ui/radix-select";
 import { Textarea } from "@/components/ui/textarea";
+import { type FieldErrors, hasFieldErrors, validateRequired } from "@/lib/form-validation";
 import {
   createBKCounselingNote,
   getBKStudentDetail,
@@ -513,6 +515,16 @@ function CounselingNoteCreateModal({
 }) {
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
+  const [errors, setErrors] = useState<FieldErrors<"title" | "note">>({});
+
+  const handleSubmit = () => {
+    const nextErrors: FieldErrors<"title" | "note"> = {};
+    validateRequired(nextErrors, "title", title, "Judul catatan");
+    validateRequired(nextErrors, "note", note, "Catatan pembinaan");
+    setErrors(nextErrors);
+    if (hasFieldErrors(nextErrors)) return;
+    onSubmit({ title, note });
+  };
 
   return (
     <PremiumModal
@@ -532,6 +544,7 @@ function CounselingNoteCreateModal({
             placeholder="Contoh: Follow up keterlambatan"
             className="h-12 rounded-[18px] border border-slate-300/80 bg-white/90 px-4 text-sm text-slate-700 outline-none transition-[border-color,box-shadow,background-color] hover:border-emerald-400 hover:bg-emerald-50/25 hover:shadow-[0_0_0_3px_rgba(16,185,129,0.16)] focus:border-emerald-500 focus:ring-4 focus:ring-emerald-200/80"
           />
+          <FieldError message={errors.title} />
         </div>
         <div className={premiumModalFieldClassName}>
           <label className={premiumModalLabelClassName}>Catatan pembinaan</label>
@@ -544,6 +557,7 @@ function CounselingNoteCreateModal({
             placeholder="Tulis catatan BK"
             className="min-h-[150px] rounded-[20px]"
           />
+          <FieldError message={errors.note} />
         </div>
         <div className={premiumModalActionsClassName}>
           <Button type="button" variant="outline" className="h-12 rounded-[18px] px-5" onClick={() => onOpenChange(false)}>
@@ -552,8 +566,8 @@ function CounselingNoteCreateModal({
           <Button
             type="button"
             className="h-12 rounded-[18px] bg-emerald-700 px-5 text-white hover:bg-emerald-800"
-            disabled={isPending || title.trim() === "" || note.trim() === ""}
-            onClick={() => onSubmit({ title, note })}
+            disabled={isPending}
+            onClick={handleSubmit}
           >
             {isPending ? "Menyimpan..." : "Simpan Catatan"}
           </Button>

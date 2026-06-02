@@ -161,6 +161,7 @@ export type AdminStudent = {
   gender?: string;
   birth_place?: string;
   birth_date?: string;
+  birth_place_date?: string;
   address?: string;
   phone?: string;
   parent_name?: string;

@@ -1,16 +1,18 @@
 "use client"
 
 import * as React from "react"
+import * as Select from "@radix-ui/react-select"
 import {
   DayPicker,
   getDefaultClassNames,
   type DayButton,
+  type DropdownProps,
   type Locale,
 } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
-import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from "lucide-react"
+import { CheckIcon, ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from "lucide-react"
 
 function Calendar({
   className,
@@ -51,21 +53,21 @@ function Calendar({
         ),
         month: cn("flex w-full flex-col gap-4", defaultClassNames.month),
         nav: cn(
-          "absolute inset-x-0 top-0 flex w-full items-center justify-between gap-1",
+          "pointer-events-none absolute inset-x-0 top-0 flex w-full items-center justify-between gap-1",
           defaultClassNames.nav
         ),
         button_previous: cn(
           buttonVariants({ variant: buttonVariant }),
-          "size-(--cell-size) rounded-xl border border-emerald-100 bg-white p-0 text-emerald-800 shadow-sm select-none transition-[border-color,box-shadow,background-color] hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900 aria-disabled:opacity-50",
+          "pointer-events-auto size-(--cell-size) rounded-xl border border-emerald-100 bg-white p-0 text-emerald-800 shadow-sm select-none transition-[border-color,box-shadow,background-color] hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900 aria-disabled:opacity-50",
           defaultClassNames.button_previous
         ),
         button_next: cn(
           buttonVariants({ variant: buttonVariant }),
-          "size-(--cell-size) rounded-xl border border-emerald-100 bg-white p-0 text-emerald-800 shadow-sm select-none transition-[border-color,box-shadow,background-color] hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900 aria-disabled:opacity-50",
+          "pointer-events-auto size-(--cell-size) rounded-xl border border-emerald-100 bg-white p-0 text-emerald-800 shadow-sm select-none transition-[border-color,box-shadow,background-color] hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900 aria-disabled:opacity-50",
           defaultClassNames.button_next
         ),
         month_caption: cn(
-          "flex h-(--cell-size) w-full items-center justify-center px-(--cell-size)",
+          "relative z-10 flex h-(--cell-size) w-full items-center justify-center px-(--cell-size)",
           defaultClassNames.month_caption
         ),
         dropdowns: cn(
@@ -165,6 +167,7 @@ function Calendar({
         DayButton: ({ ...props }) => (
           <CalendarDayButton locale={locale} {...props} />
         ),
+        Dropdown: CalendarDropdown,
         WeekNumber: ({ children, ...props }) => {
           return (
             <td {...props}>
@@ -178,6 +181,65 @@ function Calendar({
       }}
       {...props}
     />
+  )
+}
+
+function CalendarDropdown({
+  options,
+  value,
+  onChange,
+  disabled,
+}: DropdownProps) {
+  const selectedValue = value === undefined || value === null ? "" : String(value)
+  const selectedOption = options?.find((option) => String(option.value) === selectedValue)
+
+  return (
+    <Select.Root
+      value={selectedValue}
+      onValueChange={(nextValue) => {
+        onChange?.({
+          target: { value: nextValue },
+          currentTarget: { value: nextValue },
+        } as React.ChangeEvent<HTMLSelectElement>)
+      }}
+      disabled={disabled}
+    >
+      <Select.Trigger
+        className="group inline-flex h-9 min-w-[4.25rem] items-center justify-center gap-1.5 rounded-xl border border-emerald-100 bg-white/90 px-2.5 text-sm font-semibold tracking-[-0.01em] text-slate-900 shadow-[0_8px_18px_rgba(15,23,42,0.06)] outline-none transition-[border-color,box-shadow,background-color] hover:border-emerald-300 hover:bg-emerald-50 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-200/70 disabled:cursor-not-allowed disabled:opacity-50"
+        aria-label={selectedOption?.label}
+      >
+        <Select.Value placeholder={selectedOption?.label} />
+        <Select.Icon className="text-slate-500 transition-transform group-data-[state=open]:rotate-180">
+          <ChevronDownIcon className="size-3.5" />
+        </Select.Icon>
+      </Select.Trigger>
+
+      <Select.Portal>
+        <Select.Content
+          position="popper"
+          sideOffset={8}
+          className="z-[90] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-2xl border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.99)_0%,rgba(242,252,247,0.99)_100%)] p-1.5 shadow-[0_24px_70px_rgba(15,23,42,0.18)] backdrop-blur-xl"
+        >
+          <Select.Viewport className="max-h-[260px] space-y-1">
+            {options?.map((option) => (
+              <Select.Item
+                key={option.value}
+                value={String(option.value)}
+                disabled={option.disabled}
+                className="group/item relative flex cursor-pointer select-none items-center gap-2 rounded-xl border border-transparent px-2.5 py-2 text-sm font-medium text-slate-700 outline-none transition hover:border-emerald-100 hover:bg-emerald-50/80 data-[highlighted]:border-emerald-100 data-[highlighted]:bg-emerald-50/90 data-[state=checked]:border-emerald-100 data-[state=checked]:bg-emerald-100/80 data-[disabled]:pointer-events-none data-[disabled]:opacity-40"
+              >
+                <span className="flex size-4 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-emerald-600 transition-colors group-hover/item:border-emerald-200 group-data-[highlighted]/item:border-emerald-200 group-data-[state=checked]/item:border-emerald-200">
+                  <Select.ItemIndicator>
+                    <CheckIcon className="size-3" />
+                  </Select.ItemIndicator>
+                </span>
+                <Select.ItemText>{option.label}</Select.ItemText>
+              </Select.Item>
+            ))}
+          </Select.Viewport>
+        </Select.Content>
+      </Select.Portal>
+    </Select.Root>
   )
 }
 

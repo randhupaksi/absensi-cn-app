@@ -7,6 +7,7 @@ import { StaffShell } from "@/components/dashboard/staff/staff-shell";
 import { walasSidebarItems } from "@/components/dashboard/staff/staff-sidebar";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { FieldError } from "@/components/ui/field-error";
 import {
   Popover,
   PopoverContent,
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui/premium-modal";
 import { RadixSelectField } from "@/components/ui/radix-select";
 import { Textarea } from "@/components/ui/textarea";
+import { type FieldErrors, hasFieldErrors, validateRequired } from "@/lib/form-validation";
 import {
   getTeacherHomeroomAttendanceOverview,
   reviewTeacherHomeroomAttendance,
@@ -825,6 +827,7 @@ function AttendanceReviewModal({
 }) {
   const [status, setStatus] = useState("telat");
   const [verificationNote, setVerificationNote] = useState("");
+  const [errors, setErrors] = useState<FieldErrors<"status" | "verification_note">>({});
 
   const open = Boolean(record);
 
@@ -832,7 +835,17 @@ function AttendanceReviewModal({
     if (!record) return;
     setStatus(record.status.toLowerCase());
     setVerificationNote(record.verification_note || record.notes || "");
+    setErrors({});
   }, [record]);
+
+  const handleSubmit = () => {
+    const nextErrors: FieldErrors<"status" | "verification_note"> = {};
+    validateRequired(nextErrors, "status", status, "Status final");
+    validateRequired(nextErrors, "verification_note", verificationNote, "Catatan review");
+    setErrors(nextErrors);
+    if (hasFieldErrors(nextErrors)) return;
+    onSubmit({ status, verification_note: verificationNote });
+  };
 
   return (
     <PremiumModal
@@ -870,6 +883,7 @@ function AttendanceReviewModal({
                 placeholder="Pilih status final"
                 triggerClassName="h-12 rounded-[18px]"
               />
+              <FieldError message={errors.status} />
             </div>
             <div className={premiumModalFieldClassName}>
               <label className={premiumModalLabelClassName}>Verifikasi</label>
@@ -890,6 +904,7 @@ function AttendanceReviewModal({
               placeholder="Tulis catatan review singkat"
               className="min-h-[140px] rounded-[20px]"
             />
+            <FieldError message={errors.verification_note} />
           </div>
 
           <div className={premiumModalActionsClassName}>
@@ -905,12 +920,7 @@ function AttendanceReviewModal({
               type="button"
               className="h-12 rounded-[18px] bg-emerald-700 px-5 text-white hover:bg-emerald-800"
               disabled={isPending}
-              onClick={() =>
-                onSubmit({
-                  status,
-                  verification_note: verificationNote,
-                })
-              }
+              onClick={handleSubmit}
             >
               {isPending ? "Menyimpan..." : "Simpan Review"}
             </Button>

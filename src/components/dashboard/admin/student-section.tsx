@@ -3,8 +3,17 @@
 import { EmptyState } from "@/components/dashboard/admin/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
+import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   PremiumModal,
   premiumModalActionsClassName,
@@ -36,10 +45,21 @@ import type {
   AdminStudentClassMembershipPayload,
   AdminStudentPayload,
 } from "@/types/admin";
+import {
+  type FieldErrors,
+  hasFieldErrors,
+  validateDate,
+  validateExactDigits,
+  validateMinLength,
+  validatePhone,
+  validateRequired,
+  validateTime,
+  validateYear,
+} from "@/lib/form-validation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { id as localeID } from "date-fns/locale";
 import type { LucideIcon } from "lucide-react";
 import {
-  ArrowUpRight,
   BadgeCheck,
   BookOpen,
   CalendarClock,
@@ -85,6 +105,17 @@ const statusOptions = [
   { value: "Aktif", label: "Aktif" },
   { value: "Nonaktif", label: "Nonaktif" },
 ];
+
+const membershipStatusOptions = [
+  { value: "ACTIVE", label: "Aktif" },
+  { value: "TRANSFERRED", label: "Pindah Kelas" },
+  { value: "GRADUATED", label: "Lulus" },
+  { value: "INACTIVE", label: "Nonaktif" },
+];
+
+function deriveMembershipIsActive(status: string) {
+  return status === "ACTIVE";
+}
 
 export function StudentSection({
   students,
@@ -233,6 +264,9 @@ export function StudentSection({
       student.name.toLowerCase().includes(normalizedQuery) ||
       student.nis.toLowerCase().includes(normalizedQuery) ||
       (student.nisn ?? "").toLowerCase().includes(normalizedQuery) ||
+      (student.birth_place ?? "").toLowerCase().includes(normalizedQuery) ||
+      (student.birth_date ?? "").toLowerCase().includes(normalizedQuery) ||
+      (student.birth_place_date ?? "").toLowerCase().includes(normalizedQuery) ||
       (student.phone ?? "").toLowerCase().includes(normalizedQuery) ||
       (student.parent_name ?? "").toLowerCase().includes(normalizedQuery);
 
@@ -507,11 +541,11 @@ export function StudentSection({
           </TabsList>
 
           <TabsContent value="profiles" className="mt-4">
-            <StudentDataTableCard isLoading={isLoading} columnCount={8} emptyTitle="Belum ada siswa" emptyDescription="Tambahkan siswa baru agar data muncul pada daftar ini." icon={UsersRound}>
+            <StudentDataTableCard isLoading={isLoading} columnCount={9} emptyTitle="Belum ada siswa" emptyDescription="Tambahkan siswa baru agar data muncul pada daftar ini." icon={UsersRound}>
               <table className="min-w-full border-separate border-spacing-0 text-left">
                 <thead>
                   <tr className="bg-[#f3fbf6] text-sm text-slate-700">
-                    {["Siswa", "NIS / NISN", "Kontak", "Orang Tua", "Angkatan", "Gender", "Status", "Aksi"].map((label) => (
+                    {["Siswa", "NIS / NISN", "Kontak", "Orang Tua", "Angkatan", "Gender", "Tempat, Tanggal Lahir", "Status", "Aksi"].map((label) => (
                       <th key={label} className={`border-b border-emerald-100/90 px-4 py-4 font-medium first:rounded-tl-[24px] last:rounded-tr-[24px] ${label === "Aksi" ? "text-center" : ""}`}>
                         {label}
                       </th>
@@ -520,7 +554,7 @@ export function StudentSection({
                 </thead>
                 <tbody>
                   {!isLoading && filteredStudents.length === 0 ? (
-                    <StudentEmptyRow colSpan={8} icon={UsersRound} title="Profil siswa tidak ditemukan" description="Coba ubah pencarian atau filter status siswa." />
+                    <StudentEmptyRow colSpan={9} icon={UsersRound} title="Profil siswa tidak ditemukan" description="Coba ubah pencarian atau filter status siswa." />
                   ) : (
                     filteredStudents.map((student) => (
                       <tr key={student.id} className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30">
@@ -555,6 +589,7 @@ export function StudentSection({
                         </td>
                         <td className="border-t border-slate-100 px-4 py-4">{student.entry_year}</td>
                         <td className="border-t border-slate-100 px-4 py-4">{formatGender(student.gender)}</td>
+                        <td className="border-t border-slate-100 px-4 py-4">{formatBirthPlaceDate(student.birth_place, student.birth_date, student.birth_place_date)}</td>
                         <td className="border-t border-slate-100 px-4 py-4">
                           <StudentStatusBadge isActive={student.is_active} />
                         </td>
@@ -574,11 +609,11 @@ export function StudentSection({
           </TabsContent>
 
           <TabsContent value="memberships" className="mt-4">
-            <StudentDataTableCard isLoading={isLoading} columnCount={7} emptyTitle="Belum ada penempatan kelas" emptyDescription="Riwayat kelas siswa per tahun ajaran akan tampil di sini." icon={GraduationCap}>
+            <StudentDataTableCard isLoading={isLoading} columnCount={6} emptyTitle="Belum ada penempatan kelas" emptyDescription="Riwayat kelas siswa per tahun ajaran akan tampil di sini." icon={GraduationCap}>
               <table className="min-w-full border-separate border-spacing-0 text-left">
                 <thead>
                   <tr className="bg-[#f3fbf6] text-sm text-slate-700">
-                    {["Siswa", "Kelas", "Tahun Ajaran", "Status Member", "Aktif", "Waktu", "Aksi"].map((label) => (
+                    {["Siswa", "Kelas", "Tahun Ajaran", "Status", "Waktu", "Aksi"].map((label) => (
                       <th key={label} className={`border-b border-emerald-100/90 px-4 py-4 font-medium first:rounded-tl-[24px] last:rounded-tr-[24px] ${label === "Aksi" ? "text-center" : ""}`}>
                         {label}
                       </th>
@@ -587,7 +622,7 @@ export function StudentSection({
                 </thead>
                 <tbody>
                   {!isLoading && filteredMemberships.length === 0 ? (
-                    <StudentEmptyRow colSpan={7} icon={GraduationCap} title="Penempatan kelas tidak ditemukan" description="Belum ada data penempatan yang cocok dengan filter saat ini." />
+                    <StudentEmptyRow colSpan={6} icon={GraduationCap} title="Penempatan kelas tidak ditemukan" description="Belum ada data penempatan yang cocok dengan filter saat ini." />
                   ) : (
                     filteredMemberships.map((membership) => (
                       <tr key={membership.id} className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30">
@@ -600,12 +635,7 @@ export function StudentSection({
                         <td className="border-t border-slate-100 px-4 py-4">{membership.class_name}</td>
                         <td className="border-t border-slate-100 px-4 py-4">{membership.school_year_name}</td>
                         <td className="border-t border-slate-100 px-4 py-4">
-                          <Badge variant="outline" className="border-emerald-100 bg-emerald-50 text-emerald-700">
-                            {membership.status}
-                          </Badge>
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          <StudentStatusBadge isActive={membership.is_active} />
+                          <MembershipStatusBadge status={membership.status} />
                         </td>
                         <td className="border-t border-slate-100 px-4 py-4">
                           <div className="space-y-1 text-xs text-slate-500">
@@ -796,6 +826,7 @@ function StudentProfileCreateModal({
     entry_year: new Date().getFullYear(),
     is_active: true,
   });
+  const [errors, setErrors] = useState<FieldErrors<keyof AdminStudentPayload>>({});
 
   const reset = () =>
     setForm({
@@ -816,7 +847,17 @@ function StudentProfileCreateModal({
 
   const handleOpenChange = (nextOpen: boolean) => {
     onOpenChange(nextOpen);
-    if (!nextOpen) reset();
+    if (!nextOpen) {
+      reset();
+      setErrors({});
+    }
+  };
+
+  const handleSubmit = () => {
+    const nextErrors = validateStudentProfileForm(form, false);
+    setErrors(nextErrors);
+    if (hasFieldErrors(nextErrors)) return;
+    onSubmit(form);
   };
 
   return (
@@ -825,18 +866,22 @@ function StudentProfileCreateModal({
         <div className="grid gap-4 md:grid-cols-2">
           <FieldGroup label="Nama Siswa">
             <Input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="Masukkan nama siswa" className={inputClassName} />
+            <FieldError message={errors.name} />
           </FieldGroup>
           <FieldGroup label="Password Login">
             <Input value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} placeholder="Minimal 6 karakter" className={inputClassName} />
+            <FieldError message={errors.password} />
           </FieldGroup>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <FieldGroup label="NIS">
             <Input value={form.nis} onChange={(event) => setForm((current) => ({ ...current, nis: event.target.value }))} placeholder="10 digit NIS" className={inputClassName} />
+            <FieldError message={errors.nis} />
           </FieldGroup>
           <FieldGroup label="NISN">
             <Input value={form.nisn} onChange={(event) => setForm((current) => ({ ...current, nisn: event.target.value }))} placeholder="Masukkan NISN" className={inputClassName} />
+            <FieldError message={errors.nisn} />
           </FieldGroup>
         </div>
 
@@ -851,9 +896,11 @@ function StudentProfileCreateModal({
                 { value: "FEMALE", label: "Perempuan" },
               ]}
             />
+            <FieldError message={errors.gender} />
           </FieldGroup>
           <FieldGroup label="Angkatan">
             <Input value={String(form.entry_year)} onChange={(event) => setForm((current) => ({ ...current, entry_year: Number(event.target.value || 0) }))} placeholder="2026" className={inputClassName} />
+            <FieldError message={errors.entry_year} />
           </FieldGroup>
           <FieldGroup label="Status Aktif">
             <RadixSelectField
@@ -865,32 +912,42 @@ function StudentProfileCreateModal({
                 { value: "false", label: "Nonaktif" },
               ]}
             />
+            <FieldError message={errors.is_active} />
           </FieldGroup>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <FieldGroup label="Telepon Siswa">
             <Input value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} placeholder="08xxxxxxxxxx" className={inputClassName} />
+            <FieldError message={errors.phone} />
           </FieldGroup>
           <FieldGroup label="Nama Orang Tua">
             <Input value={form.parent_name} onChange={(event) => setForm((current) => ({ ...current, parent_name: event.target.value }))} placeholder="Masukkan nama orang tua" className={inputClassName} />
+            <FieldError message={errors.parent_name} />
           </FieldGroup>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
           <FieldGroup label="Telepon Orang Tua">
             <Input value={form.parent_phone} onChange={(event) => setForm((current) => ({ ...current, parent_phone: event.target.value }))} placeholder="08xxxxxxxxxx" className={inputClassName} />
+            <FieldError message={errors.parent_phone} />
           </FieldGroup>
           <FieldGroup label="Tempat Lahir">
             <Input value={form.birth_place} onChange={(event) => setForm((current) => ({ ...current, birth_place: event.target.value }))} placeholder="Contoh: Cianjur" className={inputClassName} />
+            <FieldError message={errors.birth_place} />
+          </FieldGroup>
+          <FieldGroup label="Tanggal Lahir">
+            <BirthDatePicker value={form.birth_date} onChange={(value) => setForm((current) => ({ ...current, birth_date: value }))} />
+            <FieldError message={errors.birth_date} />
           </FieldGroup>
         </div>
 
         <FieldGroup label="Alamat">
           <Textarea value={form.address} onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))} placeholder="Masukkan alamat siswa" className={textareaClassName} />
+          <FieldError message={errors.address} />
         </FieldGroup>
 
-        <ModalActions isPending={isPending} onCancel={() => handleOpenChange(false)} onSubmit={() => onSubmit(form)} submitLabel="Simpan Profil Siswa" />
+        <ModalActions isPending={isPending} onCancel={() => handleOpenChange(false)} onSubmit={handleSubmit} submitLabel="Simpan Profil Siswa" />
       </div>
     </PremiumModal>
   );
@@ -924,6 +981,7 @@ function StudentProfileEditModal({
     entry_year: new Date().getFullYear(),
     is_active: true,
   });
+  const [errors, setErrors] = useState<FieldErrors<keyof AdminStudentPayload>>({});
 
   useEffect(() => {
     if (!student) return;
@@ -942,9 +1000,17 @@ function StudentProfileEditModal({
       entry_year: student.entry_year,
       is_active: student.is_active,
     });
+    setErrors({});
   }, [student]);
 
   if (!student) return null;
+
+  const handleSubmit = () => {
+    const nextErrors = validateStudentProfileForm(form, true);
+    setErrors(nextErrors);
+    if (hasFieldErrors(nextErrors)) return;
+    onSubmit(form);
+  };
 
   return (
     <PremiumModal open={open} onOpenChange={onOpenChange} title="Edit Profil Siswa" description="Perbarui data siswa dan isi password hanya jika memang ingin diganti." icon={FilePenLine}>
@@ -952,56 +1018,72 @@ function StudentProfileEditModal({
         <div className="grid gap-4 md:grid-cols-2">
           <FieldGroup label="Nama Siswa">
             <Input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="Masukkan nama siswa" className={inputClassName} />
+            <FieldError message={errors.name} />
           </FieldGroup>
           <FieldGroup label="Password Baru">
             <Input value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} placeholder="Kosongkan jika tidak diubah" className={inputClassName} />
+            <FieldError message={errors.password} />
           </FieldGroup>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <FieldGroup label="NIS">
             <Input value={form.nis} onChange={(event) => setForm((current) => ({ ...current, nis: event.target.value }))} placeholder="10 digit NIS" className={inputClassName} />
+            <FieldError message={errors.nis} />
           </FieldGroup>
           <FieldGroup label="NISN">
             <Input value={form.nisn} onChange={(event) => setForm((current) => ({ ...current, nisn: event.target.value }))} placeholder="Masukkan NISN" className={inputClassName} />
+            <FieldError message={errors.nisn} />
           </FieldGroup>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
           <FieldGroup label="Jenis Kelamin">
             <RadixSelectField value={form.gender} onValueChange={(value) => setForm((current) => ({ ...current, gender: value }))} placeholder="Pilih gender" options={[{ value: "MALE", label: "Laki-laki" }, { value: "FEMALE", label: "Perempuan" }]} />
+            <FieldError message={errors.gender} />
           </FieldGroup>
           <FieldGroup label="Angkatan">
             <Input value={String(form.entry_year)} onChange={(event) => setForm((current) => ({ ...current, entry_year: Number(event.target.value || 0) }))} placeholder="2026" className={inputClassName} />
+            <FieldError message={errors.entry_year} />
           </FieldGroup>
           <FieldGroup label="Status Aktif">
             <RadixSelectField value={String(form.is_active)} onValueChange={(value) => setForm((current) => ({ ...current, is_active: value === "true" }))} placeholder="Pilih status" options={[{ value: "true", label: "Aktif" }, { value: "false", label: "Nonaktif" }]} />
+            <FieldError message={errors.is_active} />
           </FieldGroup>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <FieldGroup label="Telepon Siswa">
             <Input value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} placeholder="08xxxxxxxxxx" className={inputClassName} />
+            <FieldError message={errors.phone} />
           </FieldGroup>
           <FieldGroup label="Nama Orang Tua">
             <Input value={form.parent_name} onChange={(event) => setForm((current) => ({ ...current, parent_name: event.target.value }))} placeholder="Masukkan nama orang tua" className={inputClassName} />
+            <FieldError message={errors.parent_name} />
           </FieldGroup>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
           <FieldGroup label="Telepon Orang Tua">
             <Input value={form.parent_phone} onChange={(event) => setForm((current) => ({ ...current, parent_phone: event.target.value }))} placeholder="08xxxxxxxxxx" className={inputClassName} />
+            <FieldError message={errors.parent_phone} />
           </FieldGroup>
           <FieldGroup label="Tempat Lahir">
             <Input value={form.birth_place} onChange={(event) => setForm((current) => ({ ...current, birth_place: event.target.value }))} placeholder="Contoh: Cianjur" className={inputClassName} />
+            <FieldError message={errors.birth_place} />
+          </FieldGroup>
+          <FieldGroup label="Tanggal Lahir">
+            <BirthDatePicker value={form.birth_date} onChange={(value) => setForm((current) => ({ ...current, birth_date: value }))} />
+            <FieldError message={errors.birth_date} />
           </FieldGroup>
         </div>
 
         <FieldGroup label="Alamat">
           <Textarea value={form.address} onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))} placeholder="Masukkan alamat siswa" className={textareaClassName} />
+          <FieldError message={errors.address} />
         </FieldGroup>
 
-        <ModalActions isPending={isPending} onCancel={() => onOpenChange(false)} onSubmit={() => onSubmit(form)} submitLabel="Update Profil Siswa" />
+        <ModalActions isPending={isPending} onCancel={() => onOpenChange(false)} onSubmit={handleSubmit} submitLabel="Update Profil Siswa" />
       </div>
     </PremiumModal>
   );
@@ -1033,6 +1115,7 @@ function StudentMembershipCreateModal({
     left_at: "",
     is_active: true,
   });
+  const [errors, setErrors] = useState<FieldErrors<keyof AdminStudentClassMembershipPayload>>({});
 
   const reset = () =>
     setForm({
@@ -1048,6 +1131,15 @@ function StudentMembershipCreateModal({
   const handleOpenChange = (nextOpen: boolean) => {
     onOpenChange(nextOpen);
     if (!nextOpen) reset();
+    if (!nextOpen) setErrors({});
+  };
+
+  const handleSubmit = () => {
+    const payload = { ...form, is_active: deriveMembershipIsActive(form.status) };
+    const nextErrors = validateStudentMembershipForm(payload);
+    setErrors(nextErrors);
+    if (hasFieldErrors(nextErrors)) return;
+    onSubmit(payload);
   };
 
   return (
@@ -1056,25 +1148,26 @@ function StudentMembershipCreateModal({
         <div className="grid gap-4 md:grid-cols-2">
           <FieldGroup label="Siswa">
             <RadixSelectField value={form.student_id} onValueChange={(value) => setForm((current) => ({ ...current, student_id: value }))} placeholder="Pilih siswa" options={students.map((student) => ({ value: student.id, label: student.name, description: student.nis }))} />
+            <FieldError message={errors.student_id} />
           </FieldGroup>
           <FieldGroup label="Kelas">
             <RadixSelectField value={form.class_id} onValueChange={(value) => setForm((current) => ({ ...current, class_id: value }))} placeholder="Pilih kelas" options={classes.map((item) => ({ value: item.id, label: item.display_name, description: item.school_year_name }))} />
+            <FieldError message={errors.class_id} />
           </FieldGroup>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2">
           <FieldGroup label="Tahun Ajaran">
-            <RadixSelectField value={form.school_year_id} onValueChange={(value) => setForm((current) => ({ ...current, school_year_id: value }))} placeholder="Pilih tahun ajaran" options={schoolYears.map((item) => ({ value: item.id, label: item.name, description: `${item.start_year} - ${item.end_year}` }))} />
+            <RadixSelectField value={form.school_year_id} onValueChange={(value) => setForm((current) => ({ ...current, school_year_id: value }))} placeholder="Pilih tahun ajaran" options={schoolYears.map((item) => ({ value: item.id, label: item.name }))} />
+            <FieldError message={errors.school_year_id} />
           </FieldGroup>
-          <FieldGroup label="Status Membership">
-            <RadixSelectField value={form.status} onValueChange={(value) => setForm((current) => ({ ...current, status: value }))} placeholder="Pilih status" options={[{ value: "ACTIVE", label: "ACTIVE" }, { value: "TRANSFERRED", label: "TRANSFERRED" }, { value: "GRADUATED", label: "GRADUATED" }, { value: "INACTIVE", label: "INACTIVE" }]} />
-          </FieldGroup>
-          <FieldGroup label="Status Aktif">
-            <RadixSelectField value={String(form.is_active)} onValueChange={(value) => setForm((current) => ({ ...current, is_active: value === "true" }))} placeholder="Pilih status" options={[{ value: "true", label: "Aktif" }, { value: "false", label: "Nonaktif" }]} />
+          <FieldGroup label="Status Penempatan">
+            <RadixSelectField value={form.status} onValueChange={(value) => setForm((current) => ({ ...current, status: value, is_active: deriveMembershipIsActive(value) }))} placeholder="Pilih status" options={membershipStatusOptions} />
+            <FieldError message={errors.status} />
           </FieldGroup>
         </div>
 
-        <ModalActions isPending={isPending} onCancel={() => handleOpenChange(false)} onSubmit={() => onSubmit(form)} submitLabel="Simpan Penempatan" />
+        <ModalActions isPending={isPending} onCancel={() => handleOpenChange(false)} onSubmit={handleSubmit} submitLabel="Simpan Penempatan" />
       </div>
     </PremiumModal>
   );
@@ -1108,6 +1201,7 @@ function StudentMembershipEditModal({
     left_at: "",
     is_active: true,
   });
+  const [errors, setErrors] = useState<FieldErrors<keyof AdminStudentClassMembershipPayload>>({});
 
   useEffect(() => {
     if (!membership) return;
@@ -1120,9 +1214,18 @@ function StudentMembershipEditModal({
       left_at: membership.left_at ?? "",
       is_active: membership.is_active,
     });
+    setErrors({});
   }, [membership]);
 
   if (!membership) return null;
+
+  const handleSubmit = () => {
+    const payload = { ...form, is_active: deriveMembershipIsActive(form.status) };
+    const nextErrors = validateStudentMembershipForm(payload);
+    setErrors(nextErrors);
+    if (hasFieldErrors(nextErrors)) return;
+    onSubmit(payload);
+  };
 
   return (
     <PremiumModal open={open} onOpenChange={onOpenChange} title="Edit Penempatan Kelas" description="Perbarui rombel siswa per tahun ajaran tanpa menghilangkan struktur riwayatnya." icon={GraduationCap}>
@@ -1130,25 +1233,26 @@ function StudentMembershipEditModal({
         <div className="grid gap-4 md:grid-cols-2">
           <FieldGroup label="Siswa">
             <RadixSelectField value={form.student_id} onValueChange={(value) => setForm((current) => ({ ...current, student_id: value }))} placeholder="Pilih siswa" options={students.map((student) => ({ value: student.id, label: student.name, description: student.nis }))} />
+            <FieldError message={errors.student_id} />
           </FieldGroup>
           <FieldGroup label="Kelas">
             <RadixSelectField value={form.class_id} onValueChange={(value) => setForm((current) => ({ ...current, class_id: value }))} placeholder="Pilih kelas" options={classes.map((item) => ({ value: item.id, label: item.display_name, description: item.school_year_name }))} />
+            <FieldError message={errors.class_id} />
           </FieldGroup>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2">
           <FieldGroup label="Tahun Ajaran">
-            <RadixSelectField value={form.school_year_id} onValueChange={(value) => setForm((current) => ({ ...current, school_year_id: value }))} placeholder="Pilih tahun ajaran" options={schoolYears.map((item) => ({ value: item.id, label: item.name, description: `${item.start_year} - ${item.end_year}` }))} />
+            <RadixSelectField value={form.school_year_id} onValueChange={(value) => setForm((current) => ({ ...current, school_year_id: value }))} placeholder="Pilih tahun ajaran" options={schoolYears.map((item) => ({ value: item.id, label: item.name }))} />
+            <FieldError message={errors.school_year_id} />
           </FieldGroup>
-          <FieldGroup label="Status Membership">
-            <RadixSelectField value={form.status} onValueChange={(value) => setForm((current) => ({ ...current, status: value }))} placeholder="Pilih status" options={[{ value: "ACTIVE", label: "ACTIVE" }, { value: "TRANSFERRED", label: "TRANSFERRED" }, { value: "GRADUATED", label: "GRADUATED" }, { value: "INACTIVE", label: "INACTIVE" }]} />
-          </FieldGroup>
-          <FieldGroup label="Status Aktif">
-            <RadixSelectField value={String(form.is_active)} onValueChange={(value) => setForm((current) => ({ ...current, is_active: value === "true" }))} placeholder="Pilih status" options={[{ value: "true", label: "Aktif" }, { value: "false", label: "Nonaktif" }]} />
+          <FieldGroup label="Status Penempatan">
+            <RadixSelectField value={form.status} onValueChange={(value) => setForm((current) => ({ ...current, status: value, is_active: deriveMembershipIsActive(value) }))} placeholder="Pilih status" options={membershipStatusOptions} />
+            <FieldError message={errors.status} />
           </FieldGroup>
         </div>
 
-        <ModalActions isPending={isPending} onCancel={() => onOpenChange(false)} onSubmit={() => onSubmit(form)} submitLabel="Update Penempatan" />
+        <ModalActions isPending={isPending} onCancel={() => onOpenChange(false)} onSubmit={handleSubmit} submitLabel="Update Penempatan" />
       </div>
     </PremiumModal>
   );
@@ -1174,6 +1278,7 @@ function AttendanceRuleCreateModal({
     late_until: "07:30:00",
     is_active: true,
   });
+  const [errors, setErrors] = useState<FieldErrors<keyof AdminAttendanceRulePayload>>({});
 
   const reset = () =>
     setForm({
@@ -1186,33 +1291,48 @@ function AttendanceRuleCreateModal({
 
   const handleOpenChange = (nextOpen: boolean) => {
     onOpenChange(nextOpen);
-    if (!nextOpen) reset();
+    if (!nextOpen) {
+      reset();
+      setErrors({});
+    }
+  };
+
+  const handleSubmit = () => {
+    const nextErrors = validateAttendanceRuleForm(form);
+    setErrors(nextErrors);
+    if (hasFieldErrors(nextErrors)) return;
+    onSubmit(form);
   };
 
   return (
     <PremiumModal open={open} onOpenChange={handleOpenChange} title="Tambah Aturan Absensi" description="Atur window hadir, telat, dan cutoff absensi per tahun ajaran." icon={TimerReset}>
       <div className="grid gap-5">
         <FieldGroup label="Tahun Ajaran">
-          <RadixSelectField value={form.school_year_id} onValueChange={(value) => setForm((current) => ({ ...current, school_year_id: value }))} placeholder="Pilih tahun ajaran" options={schoolYears.map((item) => ({ value: item.id, label: item.name, description: `${item.start_year} - ${item.end_year}` }))} />
+          <RadixSelectField value={form.school_year_id} onValueChange={(value) => setForm((current) => ({ ...current, school_year_id: value }))} placeholder="Pilih tahun ajaran" options={schoolYears.map((item) => ({ value: item.id, label: item.name }))} />
+          <FieldError message={errors.school_year_id} />
         </FieldGroup>
 
         <div className="grid gap-4 md:grid-cols-3">
           <FieldGroup label="Mulai Absen">
-            <Input value={form.check_in_start} onChange={(event) => setForm((current) => ({ ...current, check_in_start: event.target.value }))} placeholder="06:30:00" className={inputClassName} />
+            <TimeInput value={form.check_in_start} onChange={(value) => setForm((current) => ({ ...current, check_in_start: value }))} placeholder="06:30:00" />
+            <FieldError message={errors.check_in_start} />
           </FieldGroup>
           <FieldGroup label="Batas Tepat Waktu">
-            <Input value={form.on_time_until} onChange={(event) => setForm((current) => ({ ...current, on_time_until: event.target.value }))} placeholder="07:00:00" className={inputClassName} />
+            <TimeInput value={form.on_time_until} onChange={(value) => setForm((current) => ({ ...current, on_time_until: value }))} placeholder="07:00:00" />
+            <FieldError message={errors.on_time_until} />
           </FieldGroup>
           <FieldGroup label="Batas Telat">
-            <Input value={form.late_until} onChange={(event) => setForm((current) => ({ ...current, late_until: event.target.value }))} placeholder="07:30:00" className={inputClassName} />
+            <TimeInput value={form.late_until} onChange={(value) => setForm((current) => ({ ...current, late_until: value }))} placeholder="07:30:00" />
+            <FieldError message={errors.late_until} />
           </FieldGroup>
         </div>
 
         <FieldGroup label="Status Rule">
           <RadixSelectField value={String(form.is_active)} onValueChange={(value) => setForm((current) => ({ ...current, is_active: value === "true" }))} placeholder="Pilih status" options={[{ value: "true", label: "Aktif" }, { value: "false", label: "Nonaktif" }]} />
+          <FieldError message={errors.is_active} />
         </FieldGroup>
 
-        <ModalActions isPending={isPending} onCancel={() => handleOpenChange(false)} onSubmit={() => onSubmit(form)} submitLabel="Simpan Aturan Absensi" />
+        <ModalActions isPending={isPending} onCancel={() => handleOpenChange(false)} onSubmit={handleSubmit} submitLabel="Simpan Aturan Absensi" />
       </div>
     </PremiumModal>
   );
@@ -1240,6 +1360,7 @@ function AttendanceRuleEditModal({
     late_until: "07:30:00",
     is_active: true,
   });
+  const [errors, setErrors] = useState<FieldErrors<keyof AdminAttendanceRulePayload>>({});
 
   useEffect(() => {
     if (!rule) return;
@@ -1250,34 +1371,47 @@ function AttendanceRuleEditModal({
       late_until: rule.late_until,
       is_active: rule.is_active,
     });
+    setErrors({});
   }, [rule]);
 
   if (!rule) return null;
+
+  const handleSubmit = () => {
+    const nextErrors = validateAttendanceRuleForm(form);
+    setErrors(nextErrors);
+    if (hasFieldErrors(nextErrors)) return;
+    onSubmit(form);
+  };
 
   return (
     <PremiumModal open={open} onOpenChange={onOpenChange} title="Edit Aturan Absensi" description="Perbarui window hadir, telat, dan cutoff absensi untuk tahun ajaran yang dipilih." icon={TimerReset}>
       <div className="grid gap-5">
         <FieldGroup label="Tahun Ajaran">
-          <RadixSelectField value={form.school_year_id} onValueChange={(value) => setForm((current) => ({ ...current, school_year_id: value }))} placeholder="Pilih tahun ajaran" options={schoolYears.map((item) => ({ value: item.id, label: item.name, description: `${item.start_year} - ${item.end_year}` }))} />
+          <RadixSelectField value={form.school_year_id} onValueChange={(value) => setForm((current) => ({ ...current, school_year_id: value }))} placeholder="Pilih tahun ajaran" options={schoolYears.map((item) => ({ value: item.id, label: item.name }))} />
+          <FieldError message={errors.school_year_id} />
         </FieldGroup>
 
         <div className="grid gap-4 md:grid-cols-3">
           <FieldGroup label="Mulai Absen">
-            <Input value={form.check_in_start} onChange={(event) => setForm((current) => ({ ...current, check_in_start: event.target.value }))} placeholder="06:30:00" className={inputClassName} />
+            <TimeInput value={form.check_in_start} onChange={(value) => setForm((current) => ({ ...current, check_in_start: value }))} placeholder="06:30:00" />
+            <FieldError message={errors.check_in_start} />
           </FieldGroup>
           <FieldGroup label="Batas Tepat Waktu">
-            <Input value={form.on_time_until} onChange={(event) => setForm((current) => ({ ...current, on_time_until: event.target.value }))} placeholder="07:00:00" className={inputClassName} />
+            <TimeInput value={form.on_time_until} onChange={(value) => setForm((current) => ({ ...current, on_time_until: value }))} placeholder="07:00:00" />
+            <FieldError message={errors.on_time_until} />
           </FieldGroup>
           <FieldGroup label="Batas Telat">
-            <Input value={form.late_until} onChange={(event) => setForm((current) => ({ ...current, late_until: event.target.value }))} placeholder="07:30:00" className={inputClassName} />
+            <TimeInput value={form.late_until} onChange={(value) => setForm((current) => ({ ...current, late_until: value }))} placeholder="07:30:00" />
+            <FieldError message={errors.late_until} />
           </FieldGroup>
         </div>
 
         <FieldGroup label="Status Rule">
           <RadixSelectField value={String(form.is_active)} onValueChange={(value) => setForm((current) => ({ ...current, is_active: value === "true" }))} placeholder="Pilih status" options={[{ value: "true", label: "Aktif" }, { value: "false", label: "Nonaktif" }]} />
+          <FieldError message={errors.is_active} />
         </FieldGroup>
 
-        <ModalActions isPending={isPending} onCancel={() => onOpenChange(false)} onSubmit={() => onSubmit(form)} submitLabel="Update Aturan Absensi" />
+        <ModalActions isPending={isPending} onCancel={() => onOpenChange(false)} onSubmit={handleSubmit} submitLabel="Update Aturan Absensi" />
       </div>
     </PremiumModal>
   );
@@ -1400,17 +1534,34 @@ function StudentStatCard({
           <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-slate-400">{label}</p>
           <p className="text-[2.15rem] font-semibold tracking-[-0.04em] text-slate-950">{value}</p>
         </div>
-        <div className="flex flex-col items-center gap-2 text-right">
+        <div className="flex flex-col items-center text-right">
           <span className={`inline-flex size-12 items-center justify-center rounded-[18px] bg-gradient-to-br ${accentClass} text-white shadow-[0_14px_28px_rgba(15,23,42,0.16)]`}>
             <Icon className="size-5" />
           </span>
-          <div className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50/80 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-            Live
-            <ArrowUpRight className="size-3.5" />
-          </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function MembershipStatusBadge({ status }: { status: string }) {
+  const normalizedStatus = status.toUpperCase();
+  const label =
+    membershipStatusOptions.find((option) => option.value === normalizedStatus)?.label ??
+    formatBadgeLabel(status);
+  const className =
+    normalizedStatus === "ACTIVE"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+      : normalizedStatus === "TRANSFERRED"
+        ? "border-amber-200 bg-amber-50 text-amber-700"
+        : normalizedStatus === "GRADUATED"
+          ? "border-sky-200 bg-sky-50 text-sky-700"
+          : "border-slate-200 bg-slate-100 text-slate-500";
+
+  return (
+    <Badge variant="outline" className={className}>
+      {label}
+    </Badge>
   );
 }
 
@@ -1437,6 +1588,67 @@ function FieldGroup({
       {helper ? <p className={premiumModalHelperClassName}>{helper}</p> : null}
       {children}
     </div>
+  );
+}
+
+function BirthDatePicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const selectedDate = parseDateValue(value);
+
+  return (
+    <Popover>
+      <PopoverTrigger
+        render={<Button type="button" variant="outline" />}
+        className={`${inputClassName} w-full justify-start text-left font-normal ${value ? "text-slate-700" : "text-slate-400"}`}
+      >
+        <CalendarClock className="mr-2 size-4 text-emerald-600" />
+        {value ? formatBirthDate(value) : "Pilih tanggal lahir"}
+      </PopoverTrigger>
+      <PopoverContent sideOffset={10} className="w-auto rounded-[24px] border border-emerald-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f4fbf7_100%)] p-4 shadow-[0_24px_54px_rgba(15,23,42,0.12)]">
+        <PopoverHeader className="px-2 pt-1 pb-2">
+          <PopoverTitle className="text-sm font-semibold text-slate-900">
+            Pilih tanggal kelahiran
+          </PopoverTitle>
+        </PopoverHeader>
+        <Calendar
+          mode="single"
+          selected={selectedDate}
+          onSelect={(date) => onChange(date ? toDateInputValue(date) : "")}
+          locale={localeID}
+          buttonVariant="ghost"
+          captionLayout="dropdown"
+          startMonth={new Date(1990, 0)}
+          endMonth={new Date(new Date().getFullYear(), 11)}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function TimeInput({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <Input
+      value={value}
+      onChange={(event) => onChange(formatTimeInput(event.target.value))}
+      placeholder={placeholder}
+      inputMode="numeric"
+      autoComplete="off"
+      maxLength={8}
+      className={`${inputClassName} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
+    />
   );
 }
 
@@ -1489,6 +1701,109 @@ function formatDateTime(value?: string) {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return value;
   return parsed.toLocaleDateString("id-ID");
+}
+
+function formatBirthPlaceDate(place?: string, date?: string, fallback?: string) {
+  if (fallback?.trim()) return fallback;
+  const formattedDate = formatBirthDate(date);
+  const trimmedPlace = place?.trim() ?? "";
+  if (!trimmedPlace && !formattedDate) return "-";
+  if (!trimmedPlace) return formattedDate;
+  if (!formattedDate) return trimmedPlace;
+  return `${trimmedPlace}, ${formattedDate}`;
+}
+
+function formatBirthDate(value?: string) {
+  if (!value) return "";
+  const parsed = parseDateValue(value);
+  if (!parsed) return value;
+  return parsed.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function parseDateValue(value?: string) {
+  if (!value) return undefined;
+  const parsed = new Date(`${value}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+}
+
+function toDateInputValue(value: Date) {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatTimeInput(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 6);
+  const hour = digits.slice(0, 2);
+  const minute = digits.slice(2, 4);
+  const second = digits.slice(4, 6);
+
+  return [hour, minute, second].filter(Boolean).join(":");
+}
+
+function formatBadgeLabel(value: string) {
+  return value
+    .toLowerCase()
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((word) => `${word.charAt(0).toUpperCase()}${word.slice(1)}`)
+    .join(" ");
+}
+
+function validateStudentProfileForm(
+  form: AdminStudentPayload,
+  isEdit: boolean,
+): FieldErrors<keyof AdminStudentPayload> {
+  const errors: FieldErrors<keyof AdminStudentPayload> = {};
+
+  validateRequired(errors, "name", form.name, "Nama siswa");
+  validateRequired(errors, "nis", form.nis, "NIS");
+  validateExactDigits(errors, "nis", form.nis, 10, "NIS");
+  validateExactDigits(errors, "nisn", form.nisn, 10, "NISN", { allowEmpty: true });
+  validateMinLength(errors, "password", form.password, 6, isEdit ? "Password baru" : "Password login", {
+    allowEmpty: isEdit,
+  });
+  validateRequired(errors, "gender", form.gender, "Jenis kelamin");
+  validateYear(errors, "entry_year", form.entry_year, "Angkatan");
+  validatePhone(errors, "phone", form.phone, "Telepon siswa", { allowEmpty: true });
+  validateRequired(errors, "parent_name", form.parent_name, "Nama orang tua");
+  validatePhone(errors, "parent_phone", form.parent_phone, "Telepon orang tua", { allowEmpty: true });
+  validateRequired(errors, "birth_place", form.birth_place, "Tempat lahir");
+  validateRequired(errors, "birth_date", form.birth_date, "Tanggal lahir");
+  validateDate(errors, "birth_date", form.birth_date, "Tanggal lahir");
+
+  return errors;
+}
+
+function validateStudentMembershipForm(
+  form: AdminStudentClassMembershipPayload,
+): FieldErrors<keyof AdminStudentClassMembershipPayload> {
+  const errors: FieldErrors<keyof AdminStudentClassMembershipPayload> = {};
+
+  validateRequired(errors, "student_id", form.student_id, "Siswa");
+  validateRequired(errors, "class_id", form.class_id, "Kelas");
+  validateRequired(errors, "school_year_id", form.school_year_id, "Tahun ajaran");
+  validateRequired(errors, "status", form.status, "Status penempatan");
+
+  return errors;
+}
+
+function validateAttendanceRuleForm(
+  form: AdminAttendanceRulePayload,
+): FieldErrors<keyof AdminAttendanceRulePayload> {
+  const errors: FieldErrors<keyof AdminAttendanceRulePayload> = {};
+
+  validateRequired(errors, "school_year_id", form.school_year_id, "Tahun ajaran");
+  validateTime(errors, "check_in_start", form.check_in_start, "Mulai absen");
+  validateTime(errors, "on_time_until", form.on_time_until, "Batas tepat waktu");
+  validateTime(errors, "late_until", form.late_until, "Batas telat");
+
+  return errors;
 }
 
 const inputClassName =

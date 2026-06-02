@@ -20,7 +20,6 @@ import { useQuery } from "@tanstack/react-query";
 import { formatDisplayLabel } from "@/lib/utils";
 import { motion } from "motion/react";
 import {
-  ArrowUpRight,
   BadgeCheck,
   BookOpenCheck,
   Eye,
@@ -531,16 +530,12 @@ function StaffStatCard({
             {value}
           </p>
         </div>
-        <div className="flex flex-col items-center gap-2 text-right">
+        <div className="flex flex-col items-center text-right">
           <span
             className={`inline-flex size-12 items-center justify-center rounded-[18px] bg-gradient-to-br ${accentClass} text-white shadow-[0_14px_28px_rgba(15,23,42,0.16)]`}
           >
             <Icon className="size-5" />
           </span>
-          <div className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50/80 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-            Live
-            <ArrowUpRight className="size-3.5" />
-          </div>
         </div>
       </div>
     </div>
