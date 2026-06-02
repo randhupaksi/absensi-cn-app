@@ -3,6 +3,7 @@
 import { EmptyState } from "@/components/dashboard/admin/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
 import { Input } from "@/components/ui/input";
 import {
   PremiumModal,
@@ -59,6 +60,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
+import { motion } from "motion/react";
 import { toast } from "sonner";
 
 type StudentSectionProps = {
@@ -72,6 +74,11 @@ type StudentSectionProps = {
 };
 
 type StudentTab = "profiles" | "memberships" | "rules";
+
+type StudentDeleteTarget =
+  | { type: "profile"; item: AdminStudent }
+  | { type: "membership"; item: AdminStudentClassMembership }
+  | { type: "rule"; item: AdminAttendanceRule };
 
 const statusOptions = [
   { value: "Semua", label: "Semua" },
@@ -99,6 +106,7 @@ export function StudentSection({
   const [editingMembership, setEditingMembership] =
     useState<AdminStudentClassMembership | null>(null);
   const [editingRule, setEditingRule] = useState<AdminAttendanceRule | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<StudentDeleteTarget | null>(null);
 
   const normalizedQuery = query.trim().toLowerCase();
 
@@ -149,6 +157,7 @@ export function StudentSection({
     mutationFn: deleteAdminStudent,
     onSuccess: () => {
       toast.success("Data siswa berhasil dihapus.");
+      setDeleteTarget(null);
       void queryClient.invalidateQueries({ queryKey: ["admin-students"] });
       void queryClient.invalidateQueries({
         queryKey: ["admin-student-class-memberships"],
@@ -179,6 +188,7 @@ export function StudentSection({
     mutationFn: deleteAdminStudentClassMembership,
     onSuccess: () => {
       toast.success("Penempatan kelas siswa berhasil dihapus.");
+      setDeleteTarget(null);
       void queryClient.invalidateQueries({
         queryKey: ["admin-student-class-memberships"],
       });
@@ -206,6 +216,7 @@ export function StudentSection({
     mutationFn: deleteAdminAttendanceRule,
     onSuccess: () => {
       toast.success("Aturan absensi berhasil dihapus.");
+      setDeleteTarget(null);
       void queryClient.invalidateQueries({ queryKey: ["admin-attendance-rules"] });
     },
     onError: (error: Error) => toast.error(error.message),
@@ -431,7 +442,7 @@ export function StudentSection({
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-              <div className="flex h-14 items-center gap-3 rounded-[24px] border border-slate-200/80 bg-white/84 px-4 shadow-[0_14px_28px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.92)] transition-colors duration-200 hover:border-emerald-200/90 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(242,252,247,0.98)_100%)]">
+              <div className="flex h-14 items-center gap-3 rounded-[24px] border border-slate-300/80 bg-white/84 px-4 shadow-[0_14px_28px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.92)] transition-[border-color,box-shadow,background-color] duration-200 hover:border-emerald-400 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.99)_0%,rgba(236,253,245,0.98)_100%)] hover:shadow-[0_0_0_3px_rgba(16,185,129,0.16),0_16px_32px_rgba(15,23,42,0.07)]">
                 <span className="flex size-9 items-center justify-center rounded-2xl bg-[linear-gradient(180deg,#ffffff_0%,#f4faf7_100%)] text-slate-400 shadow-[0_8px_18px_rgba(15,23,42,0.06)]">
                   <SlidersHorizontal className="size-4" />
                 </span>
@@ -550,10 +561,7 @@ export function StudentSection({
                         <td className="border-t border-slate-100 px-4 py-4">
                           <ActionButtons
                             onEdit={() => setEditingStudent(student)}
-                            onDelete={() => {
-                              if (!window.confirm(`Hapus siswa ${student.name}?`)) return;
-                              deleteStudentMutation.mutate(student.id);
-                            }}
+                            onDelete={() => setDeleteTarget({ type: "profile", item: student })}
                             isDeletePending={deleteStudentMutation.isPending}
                           />
                         </td>
@@ -608,10 +616,7 @@ export function StudentSection({
                         <td className="border-t border-slate-100 px-4 py-4">
                           <ActionButtons
                             onEdit={() => setEditingMembership(membership)}
-                            onDelete={() => {
-                              if (!window.confirm(`Hapus penempatan kelas ${membership.student_name}?`)) return;
-                              deleteMembershipMutation.mutate(membership.id);
-                            }}
+                            onDelete={() => setDeleteTarget({ type: "membership", item: membership })}
                             isDeletePending={deleteMembershipMutation.isPending}
                           />
                         </td>
@@ -651,10 +656,7 @@ export function StudentSection({
                         <td className="border-t border-slate-100 px-4 py-4">
                           <ActionButtons
                             onEdit={() => setEditingRule(rule)}
-                            onDelete={() => {
-                              if (!window.confirm(`Hapus aturan absensi ${rule.school_year}?`)) return;
-                              deleteRuleMutation.mutate(rule.id);
-                            }}
+                            onDelete={() => setDeleteTarget({ type: "rule", item: rule })}
                             isDeletePending={deleteRuleMutation.isPending}
                           />
                         </td>
@@ -721,8 +723,51 @@ export function StudentSection({
         isPending={updateRuleMutation.isPending}
         onSubmit={(payload) => updateRuleMutation.mutate({ id: editingRule!.id, payload })}
       />
+      <DeleteConfirmationModal
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+        title={getStudentDeleteTitle(deleteTarget)}
+        description={getStudentDeleteDescription(deleteTarget)}
+        isPending={
+          deleteStudentMutation.isPending ||
+          deleteMembershipMutation.isPending ||
+          deleteRuleMutation.isPending
+        }
+        onConfirm={() => {
+          if (!deleteTarget) return;
+          if (deleteTarget.type === "profile") {
+            deleteStudentMutation.mutate(deleteTarget.item.id);
+            return;
+          }
+          if (deleteTarget.type === "membership") {
+            deleteMembershipMutation.mutate(deleteTarget.item.id);
+            return;
+          }
+          deleteRuleMutation.mutate(deleteTarget.item.id);
+        }}
+      />
     </>
   );
+}
+
+function getStudentDeleteTitle(target: StudentDeleteTarget | null) {
+  if (target?.type === "profile") return "Hapus Siswa?";
+  if (target?.type === "membership") return "Hapus Penempatan Kelas?";
+  if (target?.type === "rule") return "Hapus Aturan Absensi?";
+  return "Konfirmasi Penghapusan";
+}
+
+function getStudentDeleteDescription(target: StudentDeleteTarget | null) {
+  if (!target) return "Data ini akan dihapus permanen.";
+  if (target.type === "profile") {
+    return `Profil siswa "${target.item.name}" akan dihapus permanen.`;
+  }
+  if (target.type === "membership") {
+    return `Penempatan kelas "${target.item.student_name}" di ${target.item.class_name} akan dihapus permanen.`;
+  }
+  return `Aturan absensi tahun ajaran "${target.item.school_year}" akan dihapus permanen.`;
 }
 
 function StudentProfileCreateModal({
@@ -1254,14 +1299,19 @@ function StudentDataTableCard({
   columnCount: number;
 }) {
   return (
-    <div className="overflow-hidden rounded-[24px] border border-emerald-100/80">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, delay: 0.08, ease: "easeOut" }}
+      className="overflow-hidden rounded-[24px] border border-emerald-100/80"
+    >
       <div className="overflow-x-auto">{isLoading ? <LoadingTable columnCount={columnCount} /> : children}</div>
       {!isLoading && columnCount === 0 ? (
         <div className="p-5">
           <EmptyState icon={icon} title={emptyTitle} description={emptyDescription} compact />
         </div>
       ) : null}
-    </div>
+    </motion.div>
   );
 }
 
@@ -1442,7 +1492,7 @@ function formatDateTime(value?: string) {
 }
 
 const inputClassName =
-  "h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]";
+  "h-14 rounded-[1.25rem] border-slate-300/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] hover:border-emerald-400 hover:shadow-[0_0_0_3px_rgba(16,185,129,0.16),0_14px_30px_rgba(15,23,42,0.05)] focus-visible:border-emerald-500 focus-visible:ring-4 focus-visible:ring-emerald-200/80";
 
 const textareaClassName =
-  "min-h-[140px] rounded-[1.4rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 py-3 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]";
+  "min-h-[140px] rounded-[1.4rem] border-slate-300/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 py-3 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] hover:border-emerald-400 hover:shadow-[0_0_0_3px_rgba(16,185,129,0.16),0_14px_30px_rgba(15,23,42,0.05)] focus-visible:border-emerald-500 focus-visible:ring-4 focus-visible:ring-emerald-200/80";

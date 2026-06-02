@@ -3,6 +3,7 @@
 import { EmptyState } from "@/components/dashboard/admin/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
 import { Input } from "@/components/ui/input";
 import {
   PremiumModal,
@@ -64,6 +65,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
+import { motion } from "motion/react";
 import { toast } from "sonner";
 
 type TeacherSectionProps = {
@@ -81,6 +83,11 @@ const profileStatusOptions = [
 ];
 
 type TeacherTab = "profiles" | "subjects" | "homerooms";
+
+type TeacherDeleteTarget =
+  | { type: "profile"; item: AdminTeacherProfile }
+  | { type: "subject"; item: AdminTeacherSubjectAssignment }
+  | { type: "homeroom"; item: AdminHomeroomAssignment };
 
 export function TeacherSection({
   teacherProfiles,
@@ -101,6 +108,7 @@ export function TeacherSection({
     useState<AdminTeacherSubjectAssignment | null>(null);
   const [editingHomeroomAssignment, setEditingHomeroomAssignment] =
     useState<AdminHomeroomAssignment | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<TeacherDeleteTarget | null>(null);
 
   const usersQuery = useQuery({
     queryKey: ["admin-users"],
@@ -215,6 +223,7 @@ export function TeacherSection({
     mutationFn: deleteAdminUser,
     onSuccess: () => {
       toast.success("Data guru berhasil dihapus.");
+      setDeleteTarget(null);
       void queryClient.invalidateQueries({ queryKey: ["admin-teacher-profiles"] });
       void queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       void queryClient.invalidateQueries({
@@ -249,6 +258,7 @@ export function TeacherSection({
     mutationFn: deleteAdminTeacherSubjectAssignment,
     onSuccess: () => {
       toast.success("Assignment mapel berhasil dihapus.");
+      setDeleteTarget(null);
       void queryClient.invalidateQueries({
         queryKey: ["admin-teacher-subject-assignments"],
       });
@@ -278,6 +288,7 @@ export function TeacherSection({
     mutationFn: deleteAdminHomeroomAssignment,
     onSuccess: () => {
       toast.success("Assignment walas berhasil dihapus.");
+      setDeleteTarget(null);
       void queryClient.invalidateQueries({
         queryKey: ["admin-homeroom-assignments"],
       });
@@ -543,7 +554,7 @@ export function TeacherSection({
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-              <div className="flex h-14 items-center gap-3 rounded-[24px] border border-slate-200/80 bg-white/84 px-4 shadow-[0_14px_28px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.92)] transition-colors duration-200 hover:border-emerald-200/90 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(242,252,247,0.98)_100%)]">
+              <div className="flex h-14 items-center gap-3 rounded-[24px] border border-slate-300/80 bg-white/84 px-4 shadow-[0_14px_28px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.92)] transition-[border-color,box-shadow,background-color] duration-200 hover:border-emerald-400 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.99)_0%,rgba(236,253,245,0.98)_100%)] hover:shadow-[0_0_0_3px_rgba(16,185,129,0.16),0_16px_32px_rgba(15,23,42,0.07)]">
                 <span className="flex size-9 items-center justify-center rounded-2xl bg-[linear-gradient(180deg,#ffffff_0%,#f4faf7_100%)] text-slate-400 shadow-[0_8px_18px_rgba(15,23,42,0.06)]">
                   <SlidersHorizontal className="size-4" />
                 </span>
@@ -712,10 +723,7 @@ export function TeacherSection({
                         <td className="border-t border-slate-100 px-4 py-4">
                           <ActionButtons
                             onEdit={() => setEditingProfile(teacher)}
-                            onDelete={() => {
-                              if (!window.confirm(`Hapus guru ${teacher.name}?`)) return;
-                              deleteTeacherProfileMutation.mutate(teacher.user_id);
-                            }}
+                            onDelete={() => setDeleteTarget({ type: "profile", item: teacher })}
                             isDeletePending={deleteTeacherProfileMutation.isPending}
                           />
                         </td>
@@ -796,10 +804,7 @@ export function TeacherSection({
                         <td className="border-t border-slate-100 px-4 py-4">
                           <ActionButtons
                             onEdit={() => setEditingSubjectAssignment(assignment)}
-                            onDelete={() => {
-                              if (!window.confirm(`Hapus assignment mapel ${assignment.subject_name}?`)) return;
-                              deleteTeacherSubjectAssignmentMutation.mutate(assignment.id);
-                            }}
+                            onDelete={() => setDeleteTarget({ type: "subject", item: assignment })}
                             isDeletePending={deleteTeacherSubjectAssignmentMutation.isPending}
                           />
                         </td>
@@ -871,10 +876,7 @@ export function TeacherSection({
                         <td className="border-t border-slate-100 px-4 py-4">
                           <ActionButtons
                             onEdit={() => setEditingHomeroomAssignment(assignment)}
-                            onDelete={() => {
-                              if (!window.confirm(`Hapus assignment walas ${assignment.teacher_name}?`)) return;
-                              deleteHomeroomAssignmentMutation.mutate(assignment.id);
-                            }}
+                            onDelete={() => setDeleteTarget({ type: "homeroom", item: assignment })}
                             isDeletePending={deleteHomeroomAssignmentMutation.isPending}
                           />
                         </td>
@@ -961,8 +963,51 @@ export function TeacherSection({
           });
         }}
       />
+      <DeleteConfirmationModal
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+        title={getTeacherDeleteTitle(deleteTarget)}
+        description={getTeacherDeleteDescription(deleteTarget)}
+        isPending={
+          deleteTeacherProfileMutation.isPending ||
+          deleteTeacherSubjectAssignmentMutation.isPending ||
+          deleteHomeroomAssignmentMutation.isPending
+        }
+        onConfirm={() => {
+          if (!deleteTarget) return;
+          if (deleteTarget.type === "profile") {
+            deleteTeacherProfileMutation.mutate(deleteTarget.item.user_id);
+            return;
+          }
+          if (deleteTarget.type === "subject") {
+            deleteTeacherSubjectAssignmentMutation.mutate(deleteTarget.item.id);
+            return;
+          }
+          deleteHomeroomAssignmentMutation.mutate(deleteTarget.item.id);
+        }}
+      />
     </>
   );
+}
+
+function getTeacherDeleteTitle(target: TeacherDeleteTarget | null) {
+  if (target?.type === "profile") return "Hapus Guru?";
+  if (target?.type === "subject") return "Hapus Assignment Mapel?";
+  if (target?.type === "homeroom") return "Hapus Assignment Walas?";
+  return "Konfirmasi Penghapusan";
+}
+
+function getTeacherDeleteDescription(target: TeacherDeleteTarget | null) {
+  if (!target) return "Data ini akan dihapus permanen.";
+  if (target.type === "profile") {
+    return `Profil dan akun guru "${target.item.name}" akan dihapus permanen.`;
+  }
+  if (target.type === "subject") {
+    return `Assignment mapel "${target.item.subject_name}" untuk ${target.item.teacher_name} akan dihapus permanen.`;
+  }
+  return `Assignment wali kelas "${target.item.class_name}" untuk ${target.item.teacher_name} akan dihapus permanen.`;
 }
 
 function TeacherProfileCreateModal({
@@ -1699,7 +1744,12 @@ function DataTableCard({
   columnCount: number;
 }) {
   return (
-    <div className="overflow-hidden rounded-[24px] border border-emerald-100/80">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, delay: 0.08, ease: "easeOut" }}
+      className="overflow-hidden rounded-[24px] border border-emerald-100/80"
+    >
       <div className="overflow-x-auto">
         {isLoading ? <LoadingTable columnCount={columnCount} /> : children}
       </div>
@@ -1713,7 +1763,7 @@ function DataTableCard({
           />
         </div>
       ) : null}
-    </div>
+    </motion.div>
   );
 }
 

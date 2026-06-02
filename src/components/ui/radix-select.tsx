@@ -34,7 +34,7 @@ export function RadixSelectField({
     <Select.Root value={value} onValueChange={onValueChange}>
       <Select.Trigger
         className={cn(
-          "group flex h-14 w-full items-center justify-between rounded-[1.25rem] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-left text-sm font-medium text-slate-700 shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] outline-none transition hover:-translate-y-[1px] hover:border-emerald-200/90 hover:shadow-[0_18px_34px_rgba(16,185,129,0.12),inset_0_1px_0_rgba(255,255,255,0.95)] focus:border-emerald-200 focus:ring-4 focus:ring-emerald-100/70 data-[placeholder]:text-slate-400",
+          "group flex h-14 w-full items-center justify-between rounded-[1.25rem] border border-slate-300/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-left text-sm font-medium text-slate-700 shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] outline-none transition-[border-color,box-shadow,background-color] hover:border-emerald-400 hover:shadow-[0_0_0_3px_rgba(16,185,129,0.16),0_14px_30px_rgba(15,23,42,0.05)] focus:border-emerald-500 focus:ring-4 focus:ring-emerald-200/80 data-[placeholder]:text-slate-400",
           triggerClassName,
           className,
         )}

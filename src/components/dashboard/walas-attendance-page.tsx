@@ -57,6 +57,7 @@ import {
 import { motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { formatDisplayLabel } from "@/lib/utils";
 
 const statusOptions = [
   { value: "Semua", label: "Semua status" },
@@ -104,10 +105,10 @@ export function WalasAttendancePage() {
   const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("Semua");
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [reviewTarget, setReviewTarget] = useState<StaffAttendanceRecord | null>(null);
 
-  const dateValue = format(selectedDate, "yyyy-MM-dd");
+  const dateValue = selectedDate ? format(selectedDate, "yyyy-MM-dd") : "";
 
   const overviewQuery = useQuery({
     queryKey: ["teacher-homeroom-attendance-overview", dateValue, statusFilter, query],
@@ -276,9 +277,7 @@ export function WalasAttendancePage() {
                 <div className="hidden grid gap-4 xl:grid-cols-[0.9fr_1.1fr_0.9fr]">
                   <CalendarFilterCard
                     selectedDate={selectedDate}
-                    onSelectDate={(date) => {
-                      if (date) setSelectedDate(date);
-                    }}
+                    onSelectDate={setSelectedDate}
                   />
 
                   <div className="rounded-[24px] border border-emerald-100/75 bg-white/82 p-4 shadow-[0_14px_28px_rgba(15,23,42,0.05)]">
@@ -293,7 +292,7 @@ export function WalasAttendancePage() {
                     </div>
 
                     <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                      <div className="flex h-12 flex-1 items-center gap-3 rounded-[18px] border border-slate-200/80 bg-white/90 px-4 shadow-[0_10px_18px_rgba(15,23,42,0.04)] transition-colors duration-200 hover:border-emerald-200/90 hover:bg-emerald-50/50">
+                      <div className="flex h-12 flex-1 items-center gap-3 rounded-[18px] border border-slate-300/80 bg-white/90 px-4 shadow-[0_10px_18px_rgba(15,23,42,0.04)] transition-[border-color,box-shadow,background-color] duration-200 hover:border-emerald-400 hover:bg-emerald-50/60 hover:shadow-[0_0_0_3px_rgba(16,185,129,0.16),0_12px_24px_rgba(15,23,42,0.06)]">
                         <Search className="size-4 text-slate-400" />
                         <input
                           value={query}
@@ -348,9 +347,7 @@ export function WalasAttendancePage() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                   <AttendanceDateButton
                     selectedDate={selectedDate}
-                    onSelectDate={(date) => {
-                      if (date) setSelectedDate(date);
-                    }}
+                    onSelectDate={setSelectedDate}
                   />
 
                   <div className="w-full sm:w-[210px]">
@@ -364,7 +361,7 @@ export function WalasAttendancePage() {
                   </div>
                 </div>
 
-                <div className="flex h-14 items-center gap-3 rounded-[24px] border border-slate-200/80 bg-white/84 px-4 shadow-[0_14px_28px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.92)] transition-colors duration-200 hover:border-emerald-200/90 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(242,252,247,0.98)_100%)]">
+                <div className="flex h-14 items-center gap-3 rounded-[24px] border border-slate-300/80 bg-white/84 px-4 shadow-[0_14px_28px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.92)] transition-[border-color,box-shadow,background-color] duration-200 hover:border-emerald-400 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.99)_0%,rgba(236,253,245,0.98)_100%)] hover:shadow-[0_0_0_3px_rgba(16,185,129,0.16),0_16px_32px_rgba(15,23,42,0.07)]">
                   <span className="flex size-9 items-center justify-center rounded-2xl bg-[linear-gradient(180deg,#ffffff_0%,#f4faf7_100%)] text-slate-400 shadow-[0_8px_18px_rgba(15,23,42,0.06)]">
                     <SlidersHorizontal className="size-4" />
                   </span>
@@ -378,7 +375,12 @@ export function WalasAttendancePage() {
                 </div>
               </div>
 
-              <div className="mt-5 overflow-hidden rounded-[24px] border border-emerald-100/70 bg-white/88">
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.28, delay: 0.08, ease: "easeOut" }}
+                className="mt-5 overflow-hidden rounded-[24px] border border-emerald-100/70 bg-white/88"
+              >
                 {overviewQuery.error ? (
                   <div className="p-5">
                     <EmptyState
@@ -474,7 +476,7 @@ export function WalasAttendancePage() {
                     </table>
                   </div>
                 )}
-              </div>
+              </motion.div>
             </article>
 
             <div className="hidden self-start space-y-5">
@@ -640,7 +642,7 @@ function CalendarFilterCard({
   selectedDate,
   onSelectDate,
 }: {
-  selectedDate: Date;
+  selectedDate?: Date;
   onSelectDate: (date?: Date) => void;
 }) {
   return (
@@ -656,15 +658,15 @@ function CalendarFilterCard({
       </div>
 
       <Popover>
-        <PopoverTrigger render={<Button type="button" variant="outline" />} className="mt-4 h-12 w-full justify-start rounded-[18px] border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f4fbf7_100%)] px-4 text-left text-slate-700 shadow-[0_10px_18px_rgba(15,23,42,0.04)] hover:border-emerald-200 hover:bg-emerald-50/60">
+        <PopoverTrigger render={<Button type="button" variant="outline" />} className="mt-4 h-12 w-full justify-start rounded-[18px] border-slate-300/80 bg-[linear-gradient(180deg,#ffffff_0%,#f4fbf7_100%)] px-4 text-left text-slate-700 shadow-[0_10px_18px_rgba(15,23,42,0.04)] transition-[border-color,box-shadow,background-color] hover:border-emerald-400 hover:bg-emerald-50/70 hover:shadow-[0_0_0_3px_rgba(16,185,129,0.16),0_12px_24px_rgba(15,23,42,0.06)]">
           <div className="flex w-full items-center justify-between gap-3">
-            <span className="text-sm font-medium">{formatFriendlyDate(selectedDate)}</span>
+            <span className="text-sm font-medium">{selectedDate ? formatFriendlyDate(selectedDate) : "Pilih tanggal"}</span>
             <ArrowUpRight className="size-4 text-emerald-700" />
           </div>
         </PopoverTrigger>
         <PopoverContent
           sideOffset={10}
-          className="w-auto rounded-[24px] border border-emerald-100/80 bg-[linear-gradient(180deg,#ffffff_0%,#f7fcf9_100%)] p-3 shadow-[0_24px_54px_rgba(15,23,42,0.12)]"
+          className="w-auto rounded-[24px] border border-emerald-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f4fbf7_100%)] p-4 shadow-[0_24px_54px_rgba(15,23,42,0.12)]"
         >
           <PopoverHeader className="px-2 pt-1 pb-2">
             <PopoverTitle className="text-sm font-semibold text-slate-900">
@@ -688,14 +690,14 @@ function AttendanceDateButton({
   selectedDate,
   onSelectDate,
 }: {
-  selectedDate: Date;
+  selectedDate?: Date;
   onSelectDate: (date?: Date) => void;
 }) {
   return (
     <Popover>
       <PopoverTrigger
         render={<Button type="button" variant="outline" />}
-        className="h-14 rounded-[22px] border-slate-200/80 bg-white/84 px-4 text-left text-slate-700 shadow-[0_14px_28px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.92)] transition-colors duration-200 hover:border-emerald-200/90 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(242,252,247,0.98)_100%)]"
+        className="h-14 rounded-[22px] border-slate-300/80 bg-white/84 px-4 text-left text-slate-700 shadow-[0_14px_28px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.92)] transition-[border-color,box-shadow,background-color] duration-200 hover:border-emerald-400 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.99)_0%,rgba(236,253,245,0.98)_100%)] hover:shadow-[0_0_0_3px_rgba(16,185,129,0.16),0_16px_32px_rgba(15,23,42,0.07)]"
       >
         <div className="flex items-center gap-3">
           <span className="flex size-9 items-center justify-center rounded-2xl bg-[linear-gradient(180deg,#ffffff_0%,#f4faf7_100%)] text-emerald-700 shadow-[0_8px_18px_rgba(15,23,42,0.06)]">
@@ -706,7 +708,7 @@ function AttendanceDateButton({
               Tanggal
             </p>
             <p className="truncate text-sm font-medium text-slate-700">
-              {formatFriendlyDate(selectedDate)}
+              {selectedDate ? formatFriendlyDate(selectedDate) : "Pilih tanggal"}
             </p>
           </div>
           <ArrowUpRight className="ml-1 size-4 text-emerald-700" />
@@ -714,7 +716,7 @@ function AttendanceDateButton({
       </PopoverTrigger>
       <PopoverContent
         sideOffset={10}
-        className="w-auto rounded-[24px] border border-emerald-100/80 bg-[linear-gradient(180deg,#ffffff_0%,#f7fcf9_100%)] p-3 shadow-[0_24px_54px_rgba(15,23,42,0.12)]"
+        className="w-auto rounded-[24px] border border-emerald-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f4fbf7_100%)] p-4 shadow-[0_24px_54px_rgba(15,23,42,0.12)]"
       >
         <PopoverHeader className="px-2 pt-1 pb-2">
           <PopoverTitle className="text-sm font-semibold text-slate-900">
@@ -933,7 +935,7 @@ function AttendanceStatusPill({ status }: { status: string }) {
     className = "border-sky-200 bg-sky-50 text-sky-700";
   }
 
-  return <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold capitalize ${className}`}>{status}</span>;
+  return <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${className}`}>{formatDisplayLabel(status)}</span>;
 }
 
 function ReviewStatusPill({ reviewed }: { reviewed: boolean }) {

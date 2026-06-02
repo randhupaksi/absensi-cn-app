@@ -3,6 +3,7 @@
 import { EmptyState } from "@/components/dashboard/admin/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
 import { Input } from "@/components/ui/input";
 import {
   PremiumModal,
@@ -17,6 +18,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { AdminUser, AdminUserPayload } from "@/types/admin";
 import { createAdminUser, deleteAdminUser, updateAdminUser } from "@/services/admin.service";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { motion } from "motion/react";
 import { toast } from "sonner";
 
 type AdminManagementSectionProps = {
@@ -34,6 +36,7 @@ export function AdminManagementSection({
   const [query, setQuery] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
 
   const createAdminMutation = useMutation({
     mutationFn: (payload: AdminUserPayload) => createAdminUser(payload),
@@ -60,6 +63,7 @@ export function AdminManagementSection({
     mutationFn: deleteAdminUser,
     onSuccess: () => {
       toast.success("Akun admin berhasil dihapus.");
+      setDeleteTarget(null);
       void queryClient.invalidateQueries({ queryKey: ["admin-users"] });
     },
     onError: (error: Error) => toast.error(error.message),
@@ -159,7 +163,7 @@ export function AdminManagementSection({
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-              <div className="flex h-14 items-center gap-3 rounded-[24px] border border-slate-200/80 bg-white/84 px-4 shadow-[0_14px_28px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.92)] transition-colors duration-200 hover:border-emerald-200/90 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(242,252,247,0.98)_100%)]">
+              <div className="flex h-14 items-center gap-3 rounded-[24px] border border-slate-300/80 bg-white/84 px-4 shadow-[0_14px_28px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.92)] transition-[border-color,box-shadow,background-color] duration-200 hover:border-emerald-400 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.99)_0%,rgba(236,253,245,0.98)_100%)] hover:shadow-[0_0_0_3px_rgba(16,185,129,0.16),0_16px_32px_rgba(15,23,42,0.07)]">
                 <span className="flex size-9 items-center justify-center rounded-2xl bg-[linear-gradient(180deg,#ffffff_0%,#f4faf7_100%)] text-slate-400 shadow-[0_8px_18px_rgba(15,23,42,0.06)]">
                   <SlidersHorizontal className="size-4" />
                 </span>
@@ -192,7 +196,12 @@ export function AdminManagementSection({
           </div>
         ) : null}
 
-        <div className="mt-5 overflow-hidden rounded-[24px] border border-emerald-100/80">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, delay: 0.08, ease: "easeOut" }}
+          className="mt-5 overflow-hidden rounded-[24px] border border-emerald-100/80"
+        >
           <div className="overflow-x-auto">
             {isLoading ? (
               <AdminLoadingTable columnCount={5} />
@@ -249,10 +258,7 @@ export function AdminManagementSection({
                               variant="outline"
                               size="icon-sm"
                               className="rounded-[14px] border-red-200/80 bg-white text-red-500 hover:border-red-300 hover:bg-red-50 hover:text-red-500"
-                              onClick={() => {
-                                if (!window.confirm(`Hapus akun ${user.name}?`)) return;
-                                deleteAdminMutation.mutate(user.id);
-                              }}
+                              onClick={() => setDeleteTarget(user)}
                               disabled={deleteAdminMutation.isPending}
                             >
                               <Trash2 className="size-4" />
@@ -266,7 +272,7 @@ export function AdminManagementSection({
               </table>
             )}
           </div>
-        </div>
+        </motion.div>
       </section>
 
       <AdminCreateModal
@@ -285,6 +291,23 @@ export function AdminManagementSection({
         onSubmit={(payload) => {
           if (!editingUser) return;
           updateAdminMutation.mutate({ id: editingUser.id, payload });
+        }}
+      />
+      <DeleteConfirmationModal
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+        title="Hapus Admin?"
+        description={
+          deleteTarget
+            ? `Akun administrator "${deleteTarget.name}" akan dihapus permanen.`
+            : "Akun administrator ini akan dihapus permanen."
+        }
+        isPending={deleteAdminMutation.isPending}
+        onConfirm={() => {
+          if (!deleteTarget) return;
+          deleteAdminMutation.mutate(deleteTarget.id);
         }}
       />
     </>
@@ -488,4 +511,4 @@ function getInitials(name: string) {
 }
 
 const inputClassName =
-  "h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]";
+  "h-14 rounded-[1.25rem] border-slate-300/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] hover:border-emerald-400 hover:shadow-[0_0_0_3px_rgba(16,185,129,0.16),0_14px_30px_rgba(15,23,42,0.05)] focus-visible:border-emerald-500 focus-visible:ring-4 focus-visible:ring-emerald-200/80";

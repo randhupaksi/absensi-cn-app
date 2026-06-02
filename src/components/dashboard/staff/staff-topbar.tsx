@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { motion } from "motion/react";
-import { Menu, SlidersHorizontal } from "lucide-react";
+import { Menu } from "lucide-react";
 
 type StaffTopbarProps = {
   userName: string;
@@ -46,12 +46,6 @@ export function StaffTopbar({
         </div>
 
         <div className="flex items-center justify-end gap-3">
-          <button
-            type="button"
-            className="flex size-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:-translate-y-0.5 hover:text-slate-800"
-          >
-            <SlidersHorizontal className="size-4" />
-          </button>
           <div className="flex items-center gap-3 rounded-full border border-slate-200/80 bg-white px-3 py-2 shadow-[0_12px_24px_rgba(148,163,184,0.12)]">
             <div className="flex size-11 items-center justify-center rounded-full bg-emerald-50">
               <Image

@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { attendanceStatusMap } from "@/lib/constants/site";
+import { formatDisplayLabel } from "@/lib/utils";
 import { AttendanceStatus } from "@/types/attendance";
 
 type AttendanceStatusBadgeProps = {
@@ -13,7 +14,7 @@ export function AttendanceStatusBadge({
 
   return (
     <Badge className={config.className}>
-      {config.label}
+      {formatDisplayLabel(config.label)}
     </Badge>
   );
 }

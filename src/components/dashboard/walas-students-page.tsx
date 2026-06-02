@@ -17,6 +17,8 @@ import type {
   StaffHomeroomStudentDetail,
 } from "@/types/staff";
 import { useQuery } from "@tanstack/react-query";
+import { formatDisplayLabel } from "@/lib/utils";
+import { motion } from "motion/react";
 import {
   ArrowUpRight,
   BadgeCheck,
@@ -190,7 +192,7 @@ export function WalasStudentsPage() {
                 </div>
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-                  <div className="flex h-14 items-center gap-3 rounded-[24px] border border-slate-200/80 bg-white/84 px-4 shadow-[0_14px_28px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.92)] transition-colors duration-200 hover:border-emerald-200/90 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(242,252,247,0.98)_100%)]">
+                  <div className="flex h-14 items-center gap-3 rounded-[24px] border border-slate-300/80 bg-white/84 px-4 shadow-[0_14px_28px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.92)] transition-[border-color,box-shadow,background-color] duration-200 hover:border-emerald-400 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.99)_0%,rgba(236,253,245,0.98)_100%)] hover:shadow-[0_0_0_3px_rgba(16,185,129,0.16),0_16px_32px_rgba(15,23,42,0.07)]">
                     <span className="flex size-9 items-center justify-center rounded-2xl bg-[linear-gradient(180deg,#ffffff_0%,#f4faf7_100%)] text-slate-400 shadow-[0_8px_18px_rgba(15,23,42,0.06)]">
                       <SlidersHorizontal className="size-4" />
                     </span>
@@ -227,7 +229,12 @@ export function WalasStudentsPage() {
               </div>
             ) : null}
 
-            <div className="mt-5 overflow-hidden rounded-[24px] border border-emerald-100/80">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.28, delay: 0.08, ease: "easeOut" }}
+              className="mt-5 overflow-hidden rounded-[24px] border border-emerald-100/80"
+            >
               <div className="overflow-x-auto">
                 {studentsQuery.isLoading || homeroomQuery.isLoading ? (
                   <LoadingTable columnCount={8} />
@@ -324,7 +331,7 @@ export function WalasStudentsPage() {
                   </table>
                 )}
               </div>
-            </div>
+            </motion.div>
           </section>
 
           <StudentDetailModal
@@ -617,7 +624,7 @@ function AttendanceStatusPill({ status }: { status: string }) {
     className = "border-sky-200 bg-sky-50 text-sky-700";
   }
 
-  return <Badge className={className}>{status}</Badge>;
+  return <Badge className={className}>{formatDisplayLabel(status)}</Badge>;
 }
 
 function SubmissionStatusPill({ status }: { status: string }) {
@@ -630,7 +637,7 @@ function SubmissionStatusPill({ status }: { status: string }) {
     className = "border-rose-200 bg-rose-50 text-rose-700";
   }
 
-  return <Badge className={className}>{status}</Badge>;
+  return <Badge className={className}>{formatDisplayLabel(status)}</Badge>;
 }
 
 function LoadingTable({ columnCount }: { columnCount: number }) {
