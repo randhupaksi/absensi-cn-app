@@ -22,7 +22,67 @@ import {
   FaWifi,
 } from "react-icons/fa";
 import { TestimonialsCarousel } from "@/components/landing/testimonials-carousel";
+import { siteConfig } from "@/lib/config/site";
 import styles from "./page.module.css";
+
+type AttendanceWindow = {
+  check_in_start: string;
+  on_time_until: string;
+  late_until: string;
+};
+
+type ApiEnvelope<T> = {
+  success: boolean;
+  data?: T;
+};
+
+const defaultAttendanceWindow: AttendanceWindow = {
+  check_in_start: "06:30:00",
+  on_time_until: "07:00:00",
+  late_until: "07:30:00",
+};
+
+async function getLandingAttendanceWindow(): Promise<AttendanceWindow> {
+  try {
+    const response = await fetch(`${siteConfig.apiBaseUrl}/public/attendance-window`, {
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return defaultAttendanceWindow;
+    }
+
+    const payload = (await response.json()) as ApiEnvelope<AttendanceWindow>;
+    return payload.success && payload.data ? payload.data : defaultAttendanceWindow;
+  } catch {
+    return defaultAttendanceWindow;
+  }
+}
+
+function formatLandingClock(value: string) {
+  const [hour = "00", minute = "00"] = value.split(":");
+  return `${hour.padStart(2, "0")}.${minute.padStart(2, "0")}`;
+}
+
+function formatLandingClockRange(start: string, end: string) {
+  return `${formatLandingClock(start)}-${formatLandingClock(end)}`;
+}
+
+function buildHeroMetrics(attendanceWindow: AttendanceWindow) {
+  return [
+    {
+      label: "Jendela Absensi",
+      value: formatLandingClockRange(attendanceWindow.check_in_start, attendanceWindow.on_time_until),
+      detail: "Tepat waktu",
+    },
+    {
+      label: "Terlambat",
+      value: formatLandingClockRange(attendanceWindow.on_time_until, attendanceWindow.late_until),
+      detail: "Masuk review",
+    },
+    { label: "Role Terhubung", value: "4 Role", detail: "Siswa, Walas, BK, Admin" },
+  ];
+}
 
 const highlightChips = [
   "Foto Absensi Siswa",
@@ -30,12 +90,6 @@ const highlightChips = [
   "Pantauan BK",
   "Dashboard Admin",
   "Riwayat Real Time",
-];
-
-const heroMetrics = [
-  { label: "Jendela Absensi", value: "06.30-07.00", detail: "Tepat waktu" },
-  { label: "Terlambat", value: "07.00-07.30", detail: "Masuk review" },
-  { label: "Role Terhubung", value: "4 Role", detail: "Siswa, Walas, BK, Admin" },
 ];
 
 const excellencePoints = [
@@ -156,7 +210,10 @@ const testimonials = [
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const attendanceWindow = await getLandingAttendanceWindow();
+  const heroMetrics = buildHeroMetrics(attendanceWindow);
+
   return (
     <main className={`${styles.landingPage} min-h-screen`}>
       <section className="w-full">
