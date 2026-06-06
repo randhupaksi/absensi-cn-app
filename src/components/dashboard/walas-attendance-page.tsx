@@ -513,7 +513,6 @@ export function WalasAttendancePage() {
                 percentage={attendancePercentage}
                 title="Distribusi Kehadiran"
                 subtitle={`Snapshot ${overview.homeroom.class_name || "kelas walas"} pada ${formatFriendlyDate(overview.date)}`}
-                emptyTitle="Belum ada data absensi di tanggal ini"
                 badgeText="Harian"
               />
 

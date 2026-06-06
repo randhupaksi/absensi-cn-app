@@ -24,7 +24,7 @@
 .landingRevealLeft,
 .landingRevealRight {
   animation: landingRevealUp 760ms cubic-bezier(0.19, 1, 0.22, 1) both;
-  will-change: transform, opacity, filter;
+  will-change: transform, opacity;
 }
 
 .landingRevealLeft {
@@ -229,6 +229,14 @@
   background: var(--landing-footer-bg);
 }
 
+@media (max-width: 640px) {
+  .landingFooterShell {
+    background:
+      radial-gradient(circle at 50% -8%, rgba(110, 231, 183, 0.12), transparent 32%),
+      linear-gradient(180deg, #102620 0%, #0d221d 42%, #0a1c18 100%);
+  }
+}
+
 .landingFooterGlass {
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.04);
@@ -285,13 +293,11 @@
 
 @keyframes landingRevealUp {
   from {
-    filter: blur(10px);
     opacity: 0;
     transform: translate3d(0, 28px, 0) scale(0.985);
   }
 
   to {
-    filter: blur(0);
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
   }
@@ -299,13 +305,11 @@
 
 @keyframes landingRevealLeft {
   from {
-    filter: blur(10px);
     opacity: 0;
     transform: translate3d(-34px, 22px, 0) scale(0.985);
   }
 
   to {
-    filter: blur(0);
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
   }
@@ -313,13 +317,11 @@
 
 @keyframes landingRevealRight {
   from {
-    filter: blur(10px);
     opacity: 0;
     transform: translate3d(34px, 22px, 0) scale(0.985);
   }
 
   to {
-    filter: blur(0);
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
   }
@@ -327,13 +329,11 @@
 
 @keyframes landingFloatCardIn {
   from {
-    filter: blur(8px);
     opacity: 0;
     transform: translate3d(18px, 22px, 0) rotate(1deg) scale(0.95);
   }
 
   to {
-    filter: blur(0);
     opacity: 1;
     transform: translate3d(0, 0, 0) rotate(0) scale(1);
   }
