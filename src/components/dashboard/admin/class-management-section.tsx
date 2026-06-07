@@ -29,6 +29,7 @@ import {
   Search,
   ShieldCheck,
   SlidersHorizontal,
+  Sparkles,
   Trash2,
   Users,
 } from "lucide-react";
@@ -71,6 +72,23 @@ const emptyForm: ClassFormState = {
 };
 
 const gradeOptions = ["X", "XI", "XII", "XIII"];
+
+const classModalInputClassName =
+  "h-14 rounded-[1.25rem] border-slate-300/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] hover:border-emerald-400 hover:shadow-[0_0_0_3px_rgba(16,185,129,0.16),0_14px_30px_rgba(15,23,42,0.05)] focus-visible:border-emerald-500 focus-visible:ring-4 focus-visible:ring-emerald-200/80";
+
+const classModalSelectTriggerClassName =
+  "!h-14 !min-h-14 w-full data-[size=default]:!h-14 rounded-[1.25rem] border-slate-300/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 py-0 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] hover:border-emerald-400 hover:shadow-[0_0_0_3px_rgba(16,185,129,0.16),0_14px_30px_rgba(15,23,42,0.05)] focus-visible:border-emerald-500 focus-visible:ring-4 focus-visible:ring-emerald-200/80 data-open:border-emerald-500 data-open:ring-4 data-open:ring-emerald-200/80 [&_[data-slot=select-value]]:flex [&_[data-slot=select-value]]:h-full [&_[data-slot=select-value]]:items-center [&_[data-slot=select-value]]:text-slate-700 [&_[data-slot=select-value]]:data-placeholder:text-slate-400 [&_svg]:text-slate-400";
+
+const classModalSelectContentClassName =
+  "z-[9999] rounded-[1.25rem] border border-emerald-200/80 bg-white/96 p-2 text-slate-700 shadow-[0_22px_48px_rgba(15,23,42,0.16),0_8px_18px_rgba(16,185,129,0.08)] ring-0 backdrop-blur-xl";
+
+const classModalSelectItemClassName =
+  "min-h-11 rounded-[0.95rem] px-3 py-2.5 pr-9 text-[0.92rem] font-medium text-slate-700 transition-colors hover:bg-emerald-50 hover:text-emerald-800 focus:bg-emerald-50 focus:text-emerald-800 data-highlighted:bg-emerald-50 data-highlighted:text-emerald-800 data-selected:bg-emerald-100/80 data-selected:text-emerald-900";
+
+const classModalSelectTriggerStyle = {
+  height: "3.5rem",
+  minHeight: "3.5rem",
+} as const;
 
 export function ClassManagementSection({
   classes,
@@ -467,103 +485,141 @@ function ClassFormModal({
     });
   };
 
+  const handleOpenChange = (nextOpen: boolean) => {
+    onOpenChange(nextOpen);
+    if (!nextOpen) {
+      setForm(emptyForm);
+      setErrors({});
+    }
+  };
+
   return (
     <PremiumModal
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={handleOpenChange}
       icon={Building2}
       title={title}
       description={description}
     >
-      <div className="grid gap-5 md:grid-cols-2">
-        <div className={premiumModalFieldClassName}>
-          <label className={premiumModalLabelClassName}>Tingkat</label>
+      <div className="grid gap-5">
+        <div className="grid gap-4 md:grid-cols-2">
+        <FieldGroup label="Tingkat">
           <Select value={form.grade} onValueChange={(value) => setForm((prev) => ({ ...prev, grade: value ?? "" }))}>
-            <SelectTrigger>
-              <SelectValue placeholder="Pilih tingkat" />
+            <SelectTrigger className={classModalSelectTriggerClassName} style={classModalSelectTriggerStyle}>
+              <span className={form.grade ? "text-slate-700" : "text-slate-400"}>
+                {form.grade || "Pilih tingkat"}
+              </span>
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className={classModalSelectContentClassName}>
               {gradeOptions.map((grade) => (
-                <SelectItem key={grade} value={grade}>
+                <SelectItem key={grade} value={grade} className={classModalSelectItemClassName}>
                   {grade}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <FieldError message={errors.grade} />
-        </div>
+        </FieldGroup>
 
-        <div className={premiumModalFieldClassName}>
-          <label className={premiumModalLabelClassName}>Nama Rombel</label>
+        <FieldGroup label="Nama Rombel">
           <Input
             value={form.name}
             onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
             placeholder="Contoh: 1"
+            className={classModalInputClassName}
           />
           <FieldError message={errors.name} />
+        </FieldGroup>
         </div>
 
-        <div className={premiumModalFieldClassName}>
-          <label className={premiumModalLabelClassName}>Jurusan</label>
+        <div className="grid gap-4 md:grid-cols-2">
+        <FieldGroup label="Jurusan">
           <Select value={form.major_id} onValueChange={(value) => setForm((prev) => ({ ...prev, major_id: value ?? "" }))}>
-            <SelectTrigger>
-              <SelectValue placeholder="Pilih jurusan" />
+            <SelectTrigger className={classModalSelectTriggerClassName} style={classModalSelectTriggerStyle}>
+              <span className={form.major_id ? "text-slate-700" : "text-slate-400"}>
+                {majors.find((major) => major.id === form.major_id)?.code ?? "Pilih jurusan"}
+              </span>
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className={classModalSelectContentClassName}>
               {majors.map((major) => (
-                <SelectItem key={major.id} value={major.id}>
+                <SelectItem key={major.id} value={major.id} className={classModalSelectItemClassName}>
                   {major.code} - {major.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <FieldError message={errors.major_id} />
-        </div>
+        </FieldGroup>
 
-        <div className={premiumModalFieldClassName}>
-          <label className={premiumModalLabelClassName}>Tahun Ajaran</label>
+        <FieldGroup label="Tahun Ajaran">
           <Select value={form.school_year_id} onValueChange={(value) => setForm((prev) => ({ ...prev, school_year_id: value ?? "" }))}>
-            <SelectTrigger>
-              <SelectValue placeholder="Pilih tahun ajaran" />
+            <SelectTrigger className={classModalSelectTriggerClassName} style={classModalSelectTriggerStyle}>
+              <span className={form.school_year_id ? "text-slate-700" : "text-slate-400"}>
+                {schoolYears.find((year) => year.id === form.school_year_id)?.name ?? "Pilih tahun ajaran"}
+              </span>
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className={classModalSelectContentClassName}>
               {schoolYears.map((year) => (
-                <SelectItem key={year.id} value={year.id}>
+                <SelectItem key={year.id} value={year.id} className={classModalSelectItemClassName}>
                   {year.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <FieldError message={errors.school_year_id} />
+        </FieldGroup>
         </div>
 
-        <div className={`${premiumModalFieldClassName} md:col-span-2`}>
-          <label className={premiumModalLabelClassName}>Status Kelas</label>
+        <FieldGroup label="Status Kelas">
           <Select
             value={form.is_active ? "active" : "inactive"}
             onValueChange={(value) => setForm((prev) => ({ ...prev, is_active: value === "active" }))}
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Pilih status" />
+            <SelectTrigger className={classModalSelectTriggerClassName} style={classModalSelectTriggerStyle}>
+              <span className="text-slate-700">{form.is_active ? "Aktif" : "Nonaktif"}</span>
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="active">Aktif</SelectItem>
-              <SelectItem value="inactive">Nonaktif</SelectItem>
+            <SelectContent className={classModalSelectContentClassName}>
+              <SelectItem value="active" className={classModalSelectItemClassName}>Aktif</SelectItem>
+              <SelectItem value="inactive" className={classModalSelectItemClassName}>Nonaktif</SelectItem>
             </SelectContent>
           </Select>
+        </FieldGroup>
+
+        <div className={premiumModalActionsClassName}>
+          <Button
+            variant="outline"
+            className="h-12 rounded-[1.1rem] border-slate-200 px-5 text-sm font-semibold text-slate-600"
+            onClick={() => handleOpenChange(false)}
+            disabled={isSubmitting}
+          >
+            Batal
+          </Button>
+          <Button
+            className="h-12 rounded-[1.1rem] bg-[linear-gradient(135deg,#0f766e_0%,#166534_100%)] px-5 text-sm font-semibold text-white shadow-[0_20px_40px_rgba(22,101,52,0.2)] hover:opacity-95"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+          >
+            <Sparkles className="size-4" />
+            {isSubmitting ? "Menyimpan..." : "Simpan Kelas"}
+          </Button>
         </div>
       </div>
-
-      <div className={premiumModalActionsClassName}>
-        <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-          Batal
-        </Button>
-        <Button onClick={handleSubmit} disabled={isSubmitting}>
-          <Plus className="size-4" />
-          {isSubmitting ? "Menyimpan..." : "Simpan Kelas"}
-        </Button>
-      </div>
     </PremiumModal>
+  );
+}
+
+function FieldGroup({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={premiumModalFieldClassName}>
+      <label className={premiumModalLabelClassName}>{label}</label>
+      {children}
+    </div>
   );
 }
 
