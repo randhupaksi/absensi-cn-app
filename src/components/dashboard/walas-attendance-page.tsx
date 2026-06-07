@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/premium-modal";
 import { RadixSelectField } from "@/components/ui/radix-select";
 import { Textarea } from "@/components/ui/textarea";
+import { resolveApiAssetUrl } from "@/lib/config/site";
 import { type FieldErrors, hasFieldErrors, validateRequired } from "@/lib/form-validation";
 import {
   getTeacherHomeroomAttendanceOverview,
@@ -1102,24 +1103,7 @@ function formatCheckInTime(value?: string) {
 }
 
 function normalizeAttendanceProofUrl(photoUrl?: string) {
-  if (!photoUrl) {
-    return "";
-  }
-
-  if (photoUrl.startsWith("http")) {
-    return photoUrl;
-  }
-
-  return `${getApiOrigin()}${photoUrl.startsWith("/") ? photoUrl : `/${photoUrl}`}`;
-}
-
-function getApiOrigin() {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080/api/v1";
-  try {
-    return new URL(baseUrl).origin;
-  } catch {
-    return "http://localhost:8080";
-  }
+  return resolveApiAssetUrl(photoUrl);
 }
 
 function getWalasAttendanceSectionTitle(pathname: string) {
