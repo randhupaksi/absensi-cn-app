@@ -91,18 +91,24 @@ const emptyOverview: StaffHomeroomSubmissionOverview = {
 export function WalasSubmissionsPage() {
   const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("Semua");
   const [typeFilter, setTypeFilter] = useState("Semua");
   const [detailTarget, setDetailTarget] = useState<StaffSubmission | null>(null);
   const [reviewTarget, setReviewTarget] = useState<StaffSubmission | null>(null);
 
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query), 350);
+    return () => clearTimeout(timer);
+  }, [query]);
+
   const overviewQuery = useQuery({
-    queryKey: ["teacher-homeroom-submissions-overview", statusFilter, typeFilter, query],
+    queryKey: ["teacher-homeroom-submissions-overview", statusFilter, typeFilter, debouncedQuery],
     queryFn: () =>
       getTeacherHomeroomSubmissionsOverview({
         status: statusFilter === "Semua" ? "" : statusFilter,
         type: typeFilter === "Semua" ? "" : typeFilter,
-        query: query.trim(),
+        query: debouncedQuery.trim(),
       }),
   });
 

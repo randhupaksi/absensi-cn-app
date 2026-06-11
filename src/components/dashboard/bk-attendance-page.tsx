@@ -47,7 +47,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const statusOptions = [
@@ -70,21 +70,27 @@ const reviewStatusOptions = [
 export function BKAttendancePage() {
   const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("Semua");
   const [classFilter, setClassFilter] = useState("Semua");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [reviewTarget, setReviewTarget] = useState<StaffAttendanceRecord | null>(null);
 
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query), 350);
+    return () => clearTimeout(timer);
+  }, [query]);
+
   const dateValue = selectedDate ? format(selectedDate, "yyyy-MM-dd") : "";
 
   const overviewQuery = useQuery({
-    queryKey: ["bk-attendance-overview", dateValue, statusFilter, classFilter, query],
+    queryKey: ["bk-attendance-overview", dateValue, statusFilter, classFilter, debouncedQuery],
     queryFn: () =>
       getBKAttendanceOverview({
         date: dateValue,
         status: statusFilter === "Semua" ? "" : statusFilter,
         class_id: classFilter === "Semua" ? "" : classFilter,
-        query: query.trim(),
+        query: debouncedQuery.trim(),
       }),
     refetchInterval: 30_000,
     staleTime: 0,

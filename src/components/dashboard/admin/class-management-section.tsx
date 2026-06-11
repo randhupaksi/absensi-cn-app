@@ -34,7 +34,7 @@ import {
   Users,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useDeferredValue, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { AdminClass, AdminClassPayload, AdminMajor, AdminSchoolYear } from "@/types/admin";
@@ -99,6 +99,7 @@ export function ClassManagementSection({
 }: ClassManagementSectionProps) {
   const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
   const [statusFilter, setStatusFilter] = useState("all");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<AdminClass | null>(null);
@@ -113,7 +114,7 @@ export function ClassManagementSection({
   const homeroomCovered = classes.filter((item) => item.homeroom_teacher_name).length;
 
   const filteredClasses = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
+    const normalized = deferredQuery.trim().toLowerCase();
     return classes.filter((item) => {
       const matchesStatus =
         statusFilter === "all" ||
@@ -127,7 +128,7 @@ export function ClassManagementSection({
 
       return matchesStatus && matchesQuery;
     });
-  }, [classes, query, statusFilter]);
+  }, [classes, deferredQuery, statusFilter]);
 
   const createMutation = useMutation({
     mutationFn: createAdminClass,
