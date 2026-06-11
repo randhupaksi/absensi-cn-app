@@ -640,14 +640,14 @@ export function TeacherSection({
                 className="shrink-0 rounded-[18px] border border-slate-200/40 bg-white/50 px-5 py-3 text-slate-500 transition-colors hover:border-emerald-100 hover:bg-white/80 hover:text-emerald-800 data-active:border-emerald-200 data-active:bg-[linear-gradient(135deg,rgba(255,255,255,0.98)_0%,rgba(236,253,245,0.98)_100%)] data-active:text-emerald-900 data-active:shadow-[0_14px_26px_rgba(16,185,129,0.12)] xl:w-full"
               >
                 <BookOpen className="size-4" />
-                Assignment Mapel
+                Penempatan Mapel
               </TabsTrigger>
               <TabsTrigger
                 value="homerooms"
                 className="shrink-0 rounded-[18px] border border-slate-200/40 bg-white/50 px-5 py-3 text-slate-500 transition-colors hover:border-emerald-100 hover:bg-white/80 hover:text-emerald-800 data-active:border-emerald-200 data-active:bg-[linear-gradient(135deg,rgba(255,255,255,0.98)_0%,rgba(236,253,245,0.98)_100%)] data-active:text-emerald-900 data-active:shadow-[0_14px_26px_rgba(16,185,129,0.12)] xl:w-full"
               >
                 <GraduationCap className="size-4" />
-                Assignment Walas
+                Penempatan Walas
               </TabsTrigger>
             </TabsList>
           </ScrollableTabsWrapper>
