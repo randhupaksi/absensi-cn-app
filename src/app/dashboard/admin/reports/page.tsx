@@ -1,4 +1,4 @@
-import { AdminPlaceholderPage } from "@/components/dashboard/admin-placeholder-page";
+﻿import { AdminPlaceholderPage } from "@/components/dashboard/admin/pages/admin-placeholder-page";
 
 export default function AdminReportsRoute() {
   return (

@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { EmptyState } from "@/components/dashboard/admin/empty-state";
+import { EmptyState } from "@/components/dashboard/admin/widgets/empty-state";
 import type { DashboardRole } from "@/types/auth";
 import { FileText } from "lucide-react";
 import { motion } from "motion/react";

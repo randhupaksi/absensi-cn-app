@@ -1,4 +1,4 @@
-import { StudentProfilePage } from "@/components/dashboard/student-profile-page";
+﻿import { StudentProfilePage } from "@/components/dashboard/student/student-profile-page";
 
 export default function StudentProfileRoute() {
   return <StudentProfilePage />;

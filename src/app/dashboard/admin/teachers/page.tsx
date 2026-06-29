@@ -1,4 +1,4 @@
-import { AdminTeachersPage } from "@/components/dashboard/admin-teachers-page";
+﻿import { AdminTeachersPage } from "@/components/dashboard/admin/pages/admin-teachers-page";
 
 export default function AdminTeachersRoute() {
   return <AdminTeachersPage />;
