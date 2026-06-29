@@ -1,31 +1,33 @@
-﻿"use client";
+"use client";
 
 import { EmptyState } from "@/components/dashboard/admin/widgets/empty-state";
+import {
+  ActionButtons,
+  DataTableCard,
+  StatCard,
+  getInitials,
+} from "@/components/dashboard/admin/sections/section-ui";
+import {
+  AdminCreateModal,
+  AdminEditModal,
+} from "@/components/dashboard/admin/sections/admin-management-modals";
+import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
-import { FieldError } from "@/components/ui/field-error";
-import { Input } from "@/components/ui/input";
-import {
-  PremiumModal,
-  premiumModalActionsClassName,
-  premiumModalFieldClassName,
-  premiumModalLabelClassName,
-} from "@/components/modals/premium-modal";
-import { Search, ShieldCheck, SlidersHorizontal, Sparkles, LayoutPanelTop, LineChart, BadgeCheck, UserCog, KeyRound, PencilLine, Trash2, FilePenLine, Plus } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import type { ReactNode } from "react";
-import { useEffect, useDeferredValue, useMemo, useState } from "react";
-import type { AdminUser, AdminUserPayload } from "@/types/admin";
-import {
-  type FieldErrors,
-  hasFieldErrors,
-  validateMinLength,
-  validateRequired,
-} from "@/lib/form-validation";
 import { createAdminUser, deleteAdminUser, updateAdminUser } from "@/services/admin.service";
+import type { AdminUser, AdminUserPayload } from "@/types/admin";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { motion } from "motion/react";
+import {
+  BadgeCheck,
+  KeyRound,
+  LayoutPanelTop,
+  LineChart,
+  Plus,
+  Search,
+  ShieldCheck,
+  SlidersHorizontal,
+} from "lucide-react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 type AdminManagementSectionProps = {
@@ -161,7 +163,7 @@ export function AdminManagementSection({
 
           <div className="grid gap-3 grid-cols-2 xl:grid-cols-4">
             {kpiCards.map((card) => (
-              <AdminStatCard key={card.label} {...card} />
+              <StatCard key={card.label} {...card} />
             ))}
           </div>
 
@@ -204,82 +206,59 @@ export function AdminManagementSection({
           </div>
         ) : null}
 
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.28, delay: 0.08, ease: "easeOut" }}
-          className="mt-5 overflow-hidden rounded-[24px] border border-emerald-100/80"
-        >
-          {isLoading ? (
-            <div className="overflow-x-auto">
-              <AdminLoadingTable columnCount={5} />
-            </div>
-          ) : filteredAdmins.length === 0 ? (
-            <div className="p-5">
-              <EmptyState icon={ShieldCheck} title="Akun admin tidak ditemukan" description="Coba ubah pencarian atau tambahkan akun administrator baru." compact />
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full border-separate border-spacing-0 text-left">
-                <thead>
-                  <tr className="bg-[#f3fbf6] text-sm text-slate-700">
-                    {["Administrator", "Username", "Role", "Akses", "Aksi"].map((label) => (
-                      <th key={label} className={`border-b border-emerald-100/90 px-4 py-4 font-medium first:rounded-tl-[24px] last:rounded-tr-[24px] ${label === "Aksi" ? "text-center" : ""}`}>
-                        {label}
-                      </th>
-                    ))}
+        <div className="mt-5">
+          <DataTableCard
+            isLoading={isLoading}
+            columnCount={5}
+            isEmpty={filteredAdmins.length === 0}
+            emptyTitle="Akun admin tidak ditemukan"
+            emptyDescription="Coba ubah pencarian atau tambahkan akun administrator baru."
+            icon={ShieldCheck}
+          >
+            <table className="min-w-full border-separate border-spacing-0 text-left">
+              <thead>
+                <tr className="bg-[#f3fbf6] text-sm text-slate-700">
+                  {["Administrator", "Username", "Role", "Akses", "Aksi"].map((label) => (
+                    <th key={label} className={`border-b border-emerald-100/90 px-4 py-4 font-medium first:rounded-tl-[24px] last:rounded-tr-[24px] ${label === "Aksi" ? "text-center" : ""}`}>
+                      {label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredAdmins.map((user) => (
+                  <tr key={user.id} className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30">
+                    <td className="border-t border-slate-100 px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <span className="flex size-9 items-center justify-center rounded-full bg-[linear-gradient(180deg,#effcf6_0%,#dcfce7_100%)] text-xs font-semibold text-emerald-700">
+                          {getInitials(user.name)}
+                        </span>
+                        <div>
+                          <p className="font-medium text-slate-700">{user.name}</p>
+                          <p className="text-xs text-slate-400">{user.id}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="border-t border-slate-100 px-4 py-4">{user.username || "-"}</td>
+                    <td className="border-t border-slate-100 px-4 py-4">
+                      <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+                        ADMIN
+                      </Badge>
+                    </td>
+                    <td className="border-t border-slate-100 px-4 py-4">Kontrol penuh dashboard dan master data</td>
+                    <td className="border-t border-slate-100 px-4 py-4">
+                      <ActionButtons
+                        onEdit={() => setEditingUser(user)}
+                        onDelete={() => setDeleteTarget(user)}
+                        isDeletePending={deleteAdminMutation.isPending}
+                      />
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                    {filteredAdmins.map((user) => (
-                      <tr key={user.id} className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30">
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          <div className="flex items-center gap-3">
-                            <span className="flex size-9 items-center justify-center rounded-full bg-[linear-gradient(180deg,#effcf6_0%,#dcfce7_100%)] text-xs font-semibold text-emerald-700">
-                              {getInitials(user.name)}
-                            </span>
-                            <div>
-                              <p className="font-medium text-slate-700">{user.name}</p>
-                              <p className="text-xs text-slate-400">{user.id}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4">{user.username || "-"}</td>
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
-                            ADMIN
-                          </Badge>
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4">Kontrol penuh dashboard dan master data</td>
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          <div className="flex items-center justify-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="icon-sm"
-                              className="rounded-[14px] border-emerald-200/80 bg-white text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
-                              onClick={() => setEditingUser(user)}
-                            >
-                              <PencilLine className="size-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="icon-sm"
-                              className="rounded-[14px] border-red-200/80 bg-white text-red-500 hover:border-red-300 hover:bg-red-50 hover:text-red-500"
-                              onClick={() => setDeleteTarget(user)}
-                              disabled={deleteAdminMutation.isPending}
-                            >
-                              <Trash2 className="size-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  }
-                </tbody>
-              </table>
-            </div>
-          )}
-        </motion.div>
+                ))}
+              </tbody>
+            </table>
+          </DataTableCard>
+        </div>
       </section>
 
       <AdminCreateModal
@@ -289,6 +268,7 @@ export function AdminManagementSection({
         onSubmit={(payload) => createAdminMutation.mutate(payload)}
       />
       <AdminEditModal
+        key={editingUser?.id ?? "closed"}
         user={editingUser}
         open={Boolean(editingUser)}
         onOpenChange={(open) => {
@@ -320,236 +300,3 @@ export function AdminManagementSection({
     </>
   );
 }
-
-function AdminCreateModal({
-  open,
-  onOpenChange,
-  isPending,
-  onSubmit,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  isPending: boolean;
-  onSubmit: (payload: AdminUserPayload) => void;
-}) {
-  const [form, setForm] = useState<AdminUserPayload>({
-    name: "",
-    role: "ADMIN",
-    username: "",
-    nis: "",
-    password: "",
-  });
-  const [errors, setErrors] = useState<FieldErrors<keyof AdminUserPayload>>({});
-
-  const reset = () => {
-    setForm({
-      name: "",
-      role: "ADMIN",
-      username: "",
-      nis: "",
-      password: "",
-    });
-    setErrors({});
-  };
-
-  const handleOpenChange = (nextOpen: boolean) => {
-    onOpenChange(nextOpen);
-    if (!nextOpen) reset();
-  };
-
-  const handleSubmit = () => {
-    const nextErrors = validateAdminUserForm(form, false);
-    setErrors(nextErrors);
-    if (hasFieldErrors(nextErrors)) return;
-    onSubmit(form);
-  };
-
-  return (
-    <PremiumModal open={open} onOpenChange={handleOpenChange} title="Tambah Admin" description="Buat akun administrator baru dengan akses penuh ke dashboard dan master data." icon={ShieldCheck}>
-      <div className="grid gap-5">
-        <div className="grid gap-4 md:grid-cols-2">
-          <FieldGroup label="Nama Administrator">
-            <Input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="Masukkan nama admin" className={inputClassName} />
-            <FieldError message={errors.name} />
-          </FieldGroup>
-          <FieldGroup label="Username Login">
-            <Input value={form.username} onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))} placeholder="Masukkan username admin" className={inputClassName} />
-            <FieldError message={errors.username} />
-          </FieldGroup>
-        </div>
-
-        <FieldGroup label="Password Login">
-          <Input value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} placeholder="Minimal 6 karakter" className={inputClassName} />
-          <FieldError message={errors.password} />
-        </FieldGroup>
-
-        <div className={premiumModalActionsClassName}>
-          <Button variant="outline" className="h-12 rounded-[1.1rem] border-slate-200 px-5 text-sm font-semibold text-slate-600" onClick={() => handleOpenChange(false)} disabled={isPending}>
-            Batal
-          </Button>
-          <Button className="h-12 rounded-[1.1rem] bg-[linear-gradient(135deg,#0f766e_0%,#166534_100%)] px-5 text-sm font-semibold text-white shadow-[0_20px_40px_rgba(22,101,52,0.2)] hover:opacity-95" onClick={handleSubmit} disabled={isPending}>
-            <Sparkles className="size-4" />
-            {isPending ? "Menyimpan..." : "Simpan Admin"}
-          </Button>
-        </div>
-      </div>
-    </PremiumModal>
-  );
-}
-
-function AdminEditModal({
-  user,
-  open,
-  onOpenChange,
-  isPending,
-  onSubmit,
-}: {
-  user: AdminUser | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  isPending: boolean;
-  onSubmit: (payload: AdminUserPayload) => void;
-}) {
-  const [form, setForm] = useState<AdminUserPayload>({
-    name: "",
-    role: "ADMIN",
-    username: "",
-    nis: "",
-    password: "",
-  });
-  const [errors, setErrors] = useState<FieldErrors<keyof AdminUserPayload>>({});
-
-  useEffect(() => {
-    if (!user) return;
-    setForm({
-      name: user.name,
-      role: "ADMIN",
-      username: user.username ?? "",
-      nis: "",
-      password: "",
-    });
-    setErrors({});
-  }, [user]);
-
-  const handleSubmit = () => {
-    const nextErrors = validateAdminUserForm(form, true);
-    setErrors(nextErrors);
-    if (hasFieldErrors(nextErrors)) return;
-    onSubmit(form);
-  };
-
-  if (!user) return null;
-
-  return (
-    <PremiumModal open={open} onOpenChange={onOpenChange} title="Edit Admin" description="Perbarui identitas akun administrator dan isi password hanya jika memang ingin diganti." icon={FilePenLine}>
-      <div className="grid gap-5">
-        <div className="grid gap-4 md:grid-cols-2">
-          <FieldGroup label="Nama Administrator">
-            <Input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="Masukkan nama admin" className={inputClassName} />
-            <FieldError message={errors.name} />
-          </FieldGroup>
-          <FieldGroup label="Username Login">
-            <Input value={form.username} onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))} placeholder="Masukkan username admin" className={inputClassName} />
-            <FieldError message={errors.username} />
-          </FieldGroup>
-        </div>
-
-        <FieldGroup label="Password Baru">
-          <Input value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} placeholder="Kosongkan jika tidak diubah" className={inputClassName} />
-          <FieldError message={errors.password} />
-        </FieldGroup>
-
-        <div className={premiumModalActionsClassName}>
-          <Button variant="outline" className="h-12 rounded-[1.1rem] border-slate-200 px-5 text-sm font-semibold text-slate-600" onClick={() => onOpenChange(false)} disabled={isPending}>
-            Batal
-          </Button>
-          <Button className="h-12 rounded-[1.1rem] bg-[linear-gradient(135deg,#0f766e_0%,#166534_100%)] px-5 text-sm font-semibold text-white shadow-[0_20px_40px_rgba(22,101,52,0.2)] hover:opacity-95" onClick={handleSubmit} disabled={isPending}>
-            <Sparkles className="size-4" />
-            {isPending ? "Menyimpan..." : "Update Admin"}
-          </Button>
-        </div>
-      </div>
-    </PremiumModal>
-  );
-}
-
-function AdminStatCard({
-  label,
-  value,
-  icon: Icon,
-  accentClass,
-}: {
-  label: string;
-  value: number;
-  icon: LucideIcon;
-  accentClass: string;
-}) {
-  return (
-    <div className="group relative overflow-hidden rounded-[26px] border border-white/75 bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(244,252,248,0.96)_100%)] p-4 shadow-[0_18px_34px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_54px_rgba(15,23,42,0.1)]">
-      <div className="absolute right-[-10px] top-[-26px] h-24 w-24 rounded-full bg-emerald-100/40 blur-2xl transition duration-300 group-hover:scale-110" />
-      <div className="relative flex items-start justify-between gap-4">
-        <div className="space-y-2">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-slate-400">{label}</p>
-          <p className="text-[2.15rem] font-semibold tracking-[-0.04em] text-slate-950">{value}</p>
-        </div>
-        <div className="flex shrink-0 flex-col items-center text-right">
-          <span className={`inline-flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br ${accentClass} text-white shadow-[0_14px_28px_rgba(15,23,42,0.16)]`}>
-            <Icon className="size-5" />
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function AdminLoadingTable({ columnCount }: { columnCount: number }) {
-  return (
-    <div className="space-y-3 px-4 py-4">
-      {Array.from({ length: 5 }).map((_, rowIndex) => (
-        <div key={`admin-loading-${rowIndex}`} className="grid gap-3" style={{ gridTemplateColumns: `repeat(${columnCount}, minmax(120px, 1fr))` }}>
-          {Array.from({ length: columnCount }).map((__, cellIndex) => (
-            <div key={`admin-loading-cell-${rowIndex}-${cellIndex}`} className="h-4 animate-pulse rounded-full bg-slate-100" />
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function FieldGroup({
-  label,
-  children,
-}: {
-  label: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className={premiumModalFieldClassName}>
-      <label className={premiumModalLabelClassName}>{label}</label>
-      {children}
-    </div>
-  );
-}
-
-function getInitials(name: string) {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return "A";
-  if (words.length === 1) return words[0].slice(0, 1).toUpperCase();
-  return `${words[0][0] ?? ""}${words[1][0] ?? ""}`.toUpperCase();
-}
-
-function validateAdminUserForm(
-  form: AdminUserPayload,
-  isEdit: boolean,
-): FieldErrors<keyof AdminUserPayload> {
-  const errors: FieldErrors<keyof AdminUserPayload> = {};
-  validateRequired(errors, "name", form.name, "Nama administrator");
-  validateRequired(errors, "username", form.username, "Username login");
-  validateMinLength(errors, "password", form.password, 6, isEdit ? "Password baru" : "Password login", {
-    allowEmpty: isEdit,
-  });
-  return errors;
-}
-
-const inputClassName =
-  "h-14 rounded-[1.25rem] border-slate-300/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] hover:border-emerald-400 hover:shadow-[0_0_0_3px_rgba(16,185,129,0.16),0_14px_30px_rgba(15,23,42,0.05)] focus-visible:border-emerald-500 focus-visible:ring-4 focus-visible:ring-emerald-200/80";

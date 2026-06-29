@@ -1,19 +1,21 @@
-﻿"use client";
+"use client";
 
 import { EmptyState } from "@/components/dashboard/admin/widgets/empty-state";
 import { ScrollableTabsWrapper } from "@/components/dashboard/admin/widgets/scrollable-tabs";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
-import { FieldError } from "@/components/ui/field-error";
-import { Input } from "@/components/ui/input";
 import {
-  PremiumModal,
-  premiumModalActionsClassName,
-  premiumModalFieldClassName,
-  premiumModalLabelClassName,
-} from "@/components/modals/premium-modal";
-import { RadixSelectField } from "@/components/ui/radix-select";
+  ActionButtons,
+  DataTableCard,
+  StatCard,
+  getInitials,
+} from "@/components/dashboard/admin/sections/section-ui";
+import {
+  UserCreateModal,
+  UserEditModal,
+  UserRoleBadge,
+  roleDescription,
+} from "@/components/dashboard/admin/sections/user-modals";
+import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   createAdminUser,
@@ -21,18 +23,8 @@ import {
   updateAdminUser,
 } from "@/services/admin.service";
 import type { AdminUser, AdminUserPayload } from "@/types/admin";
-import {
-  type FieldErrors,
-  hasFieldErrors,
-  validateMinLength,
-  validateRequired,
-} from "@/lib/form-validation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { LucideIcon } from "lucide-react";
 import {
-  PencilLine,
-  Trash2,
-  FilePenLine,
   GraduationCap,
   LayoutPanelTop,
   LineChart,
@@ -40,13 +32,10 @@ import {
   Search,
   ShieldCheck,
   SlidersHorizontal,
-  Sparkles,
   UserCog,
   UsersRound,
 } from "lucide-react";
-import type { ReactNode } from "react";
-import { useEffect, useDeferredValue, useMemo, useState } from "react";
-import { motion } from "motion/react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 type UserSectionProps = {
@@ -194,7 +183,7 @@ export function UserSection({
 
           <div className="grid gap-3 grid-cols-2 xl:grid-cols-4">
             {kpiCards.map((card) => (
-              <UserStatCard
+              <StatCard
                 key={card.label}
                 label={card.label}
                 value={card.value}
@@ -265,9 +254,9 @@ export function UserSection({
             </TabsList>
           </ScrollableTabsWrapper>
 
-        {(["all", "admins", "bk", "teachers"] as UserTab[]).map((tab) => (
-          <TabsContent key={tab} value={tab} className="mt-4">
-              <UserDataTableCard isLoading={isLoading} columnCount={6} isEmpty={filteredUsers.length === 0} emptyTitle="Belum ada role staff" emptyDescription="Tambahkan akun baru untuk admin, BK, atau guru dari section ini." icon={ShieldCheck}>
+          {(["all", "admins", "bk", "teachers"] as UserTab[]).map((tab) => (
+            <TabsContent key={tab} value={tab} className="mt-4">
+              <DataTableCard isLoading={isLoading} columnCount={6} isEmpty={filteredUsers.length === 0} emptyTitle="Belum ada role staff" emptyDescription="Tambahkan akun baru untuk admin, BK, atau guru dari section ini." icon={ShieldCheck}>
                 <table className="min-w-full border-separate border-spacing-0 text-left">
                   <thead>
                     <tr className="bg-[#f3fbf6] text-sm text-slate-700">
@@ -280,51 +269,36 @@ export function UserSection({
                   </thead>
                   <tbody>
                     {filteredUsers.map((user) => (
-                        <tr key={user.id} className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30">
-                          <td className="border-t border-slate-100 px-4 py-4">
-                            <div className="flex items-center gap-3">
-                              <span className="flex size-9 items-center justify-center rounded-full bg-[linear-gradient(180deg,#effcf6_0%,#dcfce7_100%)] text-xs font-semibold text-emerald-700">
-                                {getInitials(user.name)}
-                              </span>
-                              <div>
-                                <p className="font-medium text-slate-700">{user.name}</p>
-                                <p className="text-xs text-slate-400">{user.id}</p>
-                              </div>
+                      <tr key={user.id} className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30">
+                        <td className="border-t border-slate-100 px-4 py-4">
+                          <div className="flex items-center gap-3">
+                            <span className="flex size-9 items-center justify-center rounded-full bg-[linear-gradient(180deg,#effcf6_0%,#dcfce7_100%)] text-xs font-semibold text-emerald-700">
+                              {getInitials(user.name)}
+                            </span>
+                            <div>
+                              <p className="font-medium text-slate-700">{user.name}</p>
+                              <p className="text-xs text-slate-400">{user.id}</p>
                             </div>
-                          </td>
-                          <td className="border-t border-slate-100 px-4 py-4">
-                            <UserRoleBadge role={user.role} />
-                          </td>
-                          <td className="border-t border-slate-100 px-4 py-4">{user.username || "-"}</td>
-                          <td className="border-t border-slate-100 px-4 py-4">{user.username || user.nis || "-"}</td>
-                          <td className="border-t border-slate-100 px-4 py-4">{roleDescription(user.role)}</td>
-                          <td className="border-t border-slate-100 px-4 py-4">
-                            <div className="flex items-center justify-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="icon-sm"
-                                className="rounded-[14px] border-emerald-200/80 bg-white text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
-                                onClick={() => setEditingUser(user)}
-                              >
-                                <PencilLine className="size-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="icon-sm"
-                                className="rounded-[14px] border-red-200/80 bg-white text-red-500 hover:border-red-300 hover:bg-red-50 hover:text-red-500"
-                                onClick={() => setDeleteTarget(user)}
-                                disabled={deleteUserMutation.isPending}
-                              >
-                                <Trash2 className="size-4" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    }
+                          </div>
+                        </td>
+                        <td className="border-t border-slate-100 px-4 py-4">
+                          <UserRoleBadge role={user.role} />
+                        </td>
+                        <td className="border-t border-slate-100 px-4 py-4">{user.username || "-"}</td>
+                        <td className="border-t border-slate-100 px-4 py-4">{user.username || user.nis || "-"}</td>
+                        <td className="border-t border-slate-100 px-4 py-4">{roleDescription(user.role)}</td>
+                        <td className="border-t border-slate-100 px-4 py-4">
+                          <ActionButtons
+                            onEdit={() => setEditingUser(user)}
+                            onDelete={() => setDeleteTarget(user)}
+                            isDeletePending={deleteUserMutation.isPending}
+                          />
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
-              </UserDataTableCard>
+              </DataTableCard>
             </TabsContent>
           ))}
         </Tabs>
@@ -337,6 +311,7 @@ export function UserSection({
         onSubmit={(payload) => createUserMutation.mutate(payload)}
       />
       <UserEditModal
+        key={editingUser?.id ?? "closed"}
         user={editingUser}
         open={Boolean(editingUser)}
         onOpenChange={(open) => {
@@ -368,342 +343,3 @@ export function UserSection({
     </>
   );
 }
-
-function UserCreateModal({
-  open,
-  onOpenChange,
-  isPending,
-  onSubmit,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  isPending: boolean;
-  onSubmit: (payload: AdminUserPayload) => void;
-}) {
-  const [form, setForm] = useState<AdminUserPayload>({
-    name: "",
-    role: "ADMIN",
-    username: "",
-    nis: "",
-    password: "",
-  });
-  const [errors, setErrors] = useState<FieldErrors<keyof AdminUserPayload>>({});
-
-  const reset = () => {
-    setForm({
-      name: "",
-      role: "ADMIN",
-      username: "",
-      nis: "",
-      password: "",
-    });
-    setErrors({});
-  };
-
-  const handleOpenChange = (nextOpen: boolean) => {
-    onOpenChange(nextOpen);
-    if (!nextOpen) reset();
-  };
-
-  const handleSubmit = () => {
-    const nextErrors = validateRoleUserForm(form, false);
-    setErrors(nextErrors);
-    if (hasFieldErrors(nextErrors)) return;
-    onSubmit(form);
-  };
-
-  return (
-    <PremiumModal open={open} onOpenChange={handleOpenChange} title="Tambah Role Staff" description="Buat akun administrator, BK, atau guru dasar untuk kebutuhan operasional backend." icon={UserCog}>
-      <div className="grid gap-5">
-        <div className="grid gap-4 md:grid-cols-2">
-          <FieldGroup label="Nama Akun">
-            <Input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="Masukkan nama akun" className={userInputClassName} />
-            <FieldError message={errors.name} />
-          </FieldGroup>
-          <FieldGroup label="Role">
-            <RadixSelectField value={form.role} onValueChange={(value) => setForm((current) => ({ ...current, role: value as AdminUser["role"] }))} placeholder="Pilih role" options={[{ value: "ADMIN", label: "ADMIN" }, { value: "BK", label: "BK" }, { value: "TEACHER", label: "TEACHER" }]} />
-            <FieldError message={errors.role} />
-          </FieldGroup>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <FieldGroup label="Username">
-            <Input value={form.username} onChange={(event) => setForm((current) => ({ ...current, username: event.target.value, nis: "" }))} placeholder="Masukkan username" className={userInputClassName} />
-            <FieldError message={errors.username} />
-          </FieldGroup>
-          <FieldGroup label="Password Login">
-            <Input value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} placeholder="Minimal 6 karakter" className={userInputClassName} />
-            <FieldError message={errors.password} />
-          </FieldGroup>
-        </div>
-
-        <UserModalActions isPending={isPending} onCancel={() => handleOpenChange(false)} onSubmit={handleSubmit} submitLabel="Simpan Role Staff" />
-      </div>
-    </PremiumModal>
-  );
-}
-
-function UserEditModal({
-  user,
-  open,
-  onOpenChange,
-  isPending,
-  onSubmit,
-}: {
-  user: AdminUser | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  isPending: boolean;
-  onSubmit: (payload: AdminUserPayload) => void;
-}) {
-  const [form, setForm] = useState<AdminUserPayload>({
-    name: "",
-    role: "ADMIN",
-    username: "",
-    nis: "",
-    password: "",
-  });
-  const [errors, setErrors] = useState<FieldErrors<keyof AdminUserPayload>>({});
-
-  useEffect(() => {
-    if (!user) return;
-    setForm({
-      name: user.name,
-      role: user.role,
-      username: user.username ?? "",
-      nis: user.nis ?? "",
-      password: "",
-    });
-    setErrors({});
-  }, [user]);
-
-  const handleSubmit = () => {
-    const nextErrors = validateRoleUserForm(form, true);
-    setErrors(nextErrors);
-    if (hasFieldErrors(nextErrors)) return;
-    onSubmit(form);
-  };
-
-  if (!user) return null;
-
-  return (
-    <PremiumModal open={open} onOpenChange={onOpenChange} title="Edit Role Staff" description="Perbarui nama akun, role, username, dan password bila memang perlu diganti." icon={FilePenLine}>
-      <div className="grid gap-5">
-        <div className="grid gap-4 md:grid-cols-2">
-          <FieldGroup label="Nama Akun">
-            <Input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="Masukkan nama akun" className={userInputClassName} />
-            <FieldError message={errors.name} />
-          </FieldGroup>
-          <FieldGroup label="Role">
-            <RadixSelectField value={form.role} onValueChange={(value) => setForm((current) => ({ ...current, role: value as AdminUser["role"] }))} placeholder="Pilih role" options={[{ value: "ADMIN", label: "ADMIN" }, { value: "BK", label: "BK" }, { value: "TEACHER", label: "TEACHER" }]} />
-            <FieldError message={errors.role} />
-          </FieldGroup>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <FieldGroup label="Username">
-            <Input value={form.username} onChange={(event) => setForm((current) => ({ ...current, username: event.target.value, nis: "" }))} placeholder="Masukkan username" className={userInputClassName} />
-            <FieldError message={errors.username} />
-          </FieldGroup>
-          <FieldGroup label="Password Baru">
-            <Input value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} placeholder="Kosongkan jika tidak diubah" className={userInputClassName} />
-            <FieldError message={errors.password} />
-          </FieldGroup>
-        </div>
-
-        <UserModalActions isPending={isPending} onCancel={() => onOpenChange(false)} onSubmit={handleSubmit} submitLabel="Update Role Staff" />
-      </div>
-    </PremiumModal>
-  );
-}
-
-function UserDataTableCard({
-  children,
-  icon,
-  emptyTitle,
-  emptyDescription,
-  isLoading,
-  columnCount,
-  isEmpty,
-}: {
-  children: ReactNode;
-  icon: LucideIcon;
-  emptyTitle: string;
-  emptyDescription: string;
-  isLoading: boolean;
-  columnCount: number;
-  isEmpty: boolean;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.28, delay: 0.08, ease: "easeOut" }}
-      className="overflow-hidden rounded-[24px] border border-emerald-100/80"
-    >
-      {isLoading ? (
-        <div className="overflow-x-auto"><UserLoadingTable columnCount={columnCount} /></div>
-      ) : isEmpty ? (
-        <div className="p-5">
-          <EmptyState icon={icon} title={emptyTitle} description={emptyDescription} compact />
-        </div>
-      ) : (
-        <div className="overflow-x-auto">{children}</div>
-      )}
-    </motion.div>
-  );
-}
-
-function UserLoadingTable({ columnCount }: { columnCount: number }) {
-  return (
-    <div className="space-y-3 px-4 py-4">
-      {Array.from({ length: 5 }).map((_, rowIndex) => (
-        <div key={`user-loading-${rowIndex}`} className="grid gap-3" style={{ gridTemplateColumns: `repeat(${columnCount}, minmax(120px, 1fr))` }}>
-          {Array.from({ length: columnCount }).map((__, cellIndex) => (
-            <div key={`user-loading-cell-${rowIndex}-${cellIndex}`} className="h-4 animate-pulse rounded-full bg-slate-100" />
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function UserEmptyRow({
-  colSpan,
-  icon,
-  title,
-  description,
-}: {
-  colSpan: number;
-  icon: LucideIcon;
-  title: string;
-  description: string;
-}) {
-  return (
-    <tr className="bg-white">
-      <td colSpan={colSpan} className="p-5">
-        <EmptyState icon={icon} title={title} description={description} compact />
-      </td>
-    </tr>
-  );
-}
-
-function UserStatCard({
-  label,
-  value,
-  icon: Icon,
-  accentClass,
-}: {
-  label: string;
-  value: number;
-  icon: LucideIcon;
-  accentClass: string;
-}) {
-  return (
-    <div className="group relative overflow-hidden rounded-[26px] border border-white/75 bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(244,252,248,0.96)_100%)] p-4 shadow-[0_18px_34px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_54px_rgba(15,23,42,0.1)]">
-      <div className="absolute right-[-10px] top-[-26px] h-24 w-24 rounded-full bg-emerald-100/40 blur-2xl transition duration-300 group-hover:scale-110" />
-      <div className="relative flex items-start justify-between gap-4">
-        <div className="space-y-2">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-slate-400">{label}</p>
-          <p className="text-[2.15rem] font-semibold tracking-[-0.04em] text-slate-950">{value}</p>
-        </div>
-        <div className="flex shrink-0 flex-col items-center text-right">
-          <span className={`inline-flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br ${accentClass} text-white shadow-[0_14px_28px_rgba(15,23,42,0.16)]`}>
-            <Icon className="size-5" />
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function UserRoleBadge({ role }: { role: AdminUser["role"] }) {
-  const classes =
-    role === "ADMIN"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-      : role === "BK"
-        ? "border-amber-200 bg-amber-50 text-amber-700"
-        : "border-sky-200 bg-sky-50 text-sky-700";
-
-  return (
-    <Badge variant="outline" className={classes}>
-      {role}
-    </Badge>
-  );
-}
-
-function roleDescription(role: AdminUser["role"]) {
-  switch (role) {
-    case "ADMIN":
-      return "Kontrol penuh dashboard dan master data";
-    case "BK":
-      return "Akses monitoring siswa dan konseling";
-    case "TEACHER":
-      return "Akun dasar guru untuk modul pengajaran";
-    default:
-      return "-";
-  }
-}
-
-function FieldGroup({
-  label,
-  children,
-}: {
-  label: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className={premiumModalFieldClassName}>
-      <label className={premiumModalLabelClassName}>{label}</label>
-      {children}
-    </div>
-  );
-}
-
-function UserModalActions({
-  isPending,
-  onCancel,
-  onSubmit,
-  submitLabel,
-}: {
-  isPending: boolean;
-  onCancel: () => void;
-  onSubmit: () => void;
-  submitLabel: string;
-}) {
-  return (
-    <div className={premiumModalActionsClassName}>
-      <Button variant="outline" className="h-12 rounded-[1.1rem] border-slate-200 px-5 text-sm font-semibold text-slate-600" onClick={onCancel} disabled={isPending}>
-        Batal
-      </Button>
-      <Button className="h-12 rounded-[1.1rem] bg-[linear-gradient(135deg,#0f766e_0%,#166534_100%)] px-5 text-sm font-semibold text-white shadow-[0_20px_40px_rgba(22,101,52,0.2)] hover:opacity-95" onClick={onSubmit} disabled={isPending}>
-        <Sparkles className="size-4" />
-        {isPending ? "Menyimpan..." : submitLabel}
-      </Button>
-    </div>
-  );
-}
-
-function getInitials(name: string) {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return "A";
-  if (words.length === 1) return words[0].slice(0, 1).toUpperCase();
-  return `${words[0][0] ?? ""}${words[1][0] ?? ""}`.toUpperCase();
-}
-
-function validateRoleUserForm(
-  form: AdminUserPayload,
-  isEdit: boolean,
-): FieldErrors<keyof AdminUserPayload> {
-  const errors: FieldErrors<keyof AdminUserPayload> = {};
-  validateRequired(errors, "name", form.name, "Nama akun");
-  validateRequired(errors, "role", form.role, "Role");
-  validateRequired(errors, "username", form.username, "Username");
-  validateMinLength(errors, "password", form.password, 6, isEdit ? "Password baru" : "Password login", {
-    allowEmpty: isEdit,
-  });
-  return errors;
-}
-
-const userInputClassName =
-  "h-14 rounded-[1.25rem] border-slate-300/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] hover:border-emerald-400 hover:shadow-[0_0_0_3px_rgba(16,185,129,0.16),0_14px_30px_rgba(15,23,42,0.05)] focus-visible:border-emerald-500 focus-visible:ring-4 focus-visible:ring-emerald-200/80";

@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { QuestionBlock, ReportCheckbox, ReportRadio } from "@/components/reports/admin/guru-report-modal";
 import { getTeacherHomeroomStudents } from "@/services/staff.service";
 import type { StaffHomeroomContext, StaffStudentSummary } from "@/types/staff";
-import { ArrowUpDown, ListChecks, Printer, TriangleAlert, UsersRound } from "lucide-react";
+import { ArrowUpDown, ListChecks, Printer, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 

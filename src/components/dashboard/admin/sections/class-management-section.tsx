@@ -1,49 +1,22 @@
-﻿"use client";
+"use client";
 
 import { EmptyState } from "@/components/dashboard/admin/widgets/empty-state";
+import {
+  ActionButtons,
+  DataTableCard,
+  StatCard,
+} from "@/components/dashboard/admin/sections/section-ui";
+import { ClassFormModal } from "@/components/dashboard/admin/sections/class-management-modals";
+import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
-import { FieldError } from "@/components/ui/field-error";
-import { Input } from "@/components/ui/input";
-import {
-  PremiumModal,
-  premiumModalActionsClassName,
-  premiumModalFieldClassName,
-  premiumModalLabelClassName,
-} from "@/components/modals/premium-modal";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  BadgeCheck,
-  Building2,
-  GraduationCap,
-  LayoutPanelTop,
-  PencilLine,
-  Plus,
-  Search,
-  ShieldCheck,
-  SlidersHorizontal,
-  Sparkles,
-  Trash2,
-  Users,
-} from "lucide-react";
-import { motion } from "motion/react";
-import { useEffect, useDeferredValue, useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import type { AdminClass, AdminClassPayload, AdminMajor, AdminSchoolYear } from "@/types/admin";
+import { RadixSelectField } from "@/components/ui/radix-select";
 import { createAdminClass, deleteAdminClass, updateAdminClass } from "@/services/admin.service";
-import {
-  type FieldErrors,
-  hasFieldErrors,
-  validateRequired,
-} from "@/lib/form-validation";
+import type { AdminClass, AdminClassPayload, AdminMajor, AdminSchoolYear } from "@/types/admin";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { BadgeCheck, Building2, GraduationCap, LayoutPanelTop, Plus, Search, ShieldCheck, SlidersHorizontal, Users } from "lucide-react";
+import { useDeferredValue, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 type ClassManagementSectionProps = {
   classes: AdminClass[];
@@ -53,42 +26,11 @@ type ClassManagementSectionProps = {
   errorMessage?: string;
 };
 
-type ClassFormState = {
-  grade: string;
-  name: string;
-  major_id: string;
-  school_year_id: string;
-  is_active: boolean;
-};
-
-type ClassFormField = keyof ClassFormState;
-
-const emptyForm: ClassFormState = {
-  grade: "",
-  name: "",
-  major_id: "",
-  school_year_id: "",
-  is_active: true,
-};
-
-const gradeOptions = ["X", "XI", "XII"];
-
-const classModalInputClassName =
-  "h-14 rounded-[1.25rem] border-slate-300/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] hover:border-emerald-400 hover:shadow-[0_0_0_3px_rgba(16,185,129,0.16),0_14px_30px_rgba(15,23,42,0.05)] focus-visible:border-emerald-500 focus-visible:ring-4 focus-visible:ring-emerald-200/80";
-
-const classModalSelectTriggerClassName =
-  "!h-14 !min-h-14 w-full data-[size=default]:!h-14 rounded-[1.25rem] border-slate-300/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 py-0 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] hover:border-emerald-400 hover:shadow-[0_0_0_3px_rgba(16,185,129,0.16),0_14px_30px_rgba(15,23,42,0.05)] focus-visible:border-emerald-500 focus-visible:ring-4 focus-visible:ring-emerald-200/80 data-open:border-emerald-500 data-open:ring-4 data-open:ring-emerald-200/80 [&_[data-slot=select-value]]:flex [&_[data-slot=select-value]]:h-full [&_[data-slot=select-value]]:items-center [&_[data-slot=select-value]]:text-slate-700 [&_[data-slot=select-value]]:data-placeholder:text-slate-400 [&_svg]:text-slate-400";
-
-const classModalSelectContentClassName =
-  "z-[9999] rounded-[1.25rem] border border-emerald-200/80 bg-white/96 p-2 text-slate-700 shadow-[0_22px_48px_rgba(15,23,42,0.16),0_8px_18px_rgba(16,185,129,0.08)] ring-0 backdrop-blur-xl";
-
-const classModalSelectItemClassName =
-  "min-h-11 rounded-[0.95rem] px-3 py-2.5 pr-9 text-[0.92rem] font-medium text-slate-700 transition-colors hover:bg-emerald-50 hover:text-emerald-800 focus:bg-emerald-50 focus:text-emerald-800 data-highlighted:bg-emerald-50 data-highlighted:text-emerald-800 data-selected:bg-emerald-100/80 data-selected:text-emerald-900";
-
-const classModalSelectTriggerStyle = {
-  height: "3.5rem",
-  minHeight: "3.5rem",
-} as const;
+const statusOptions = [
+  { value: "all", label: "Semua" },
+  { value: "active", label: "Aktif" },
+  { value: "inactive", label: "Nonaktif" },
+];
 
 export function ClassManagementSection({
   classes,
@@ -236,7 +178,7 @@ export function ClassManagementSection({
 
           <div className="grid gap-3 grid-cols-2 xl:grid-cols-4">
             {kpiCards.map((card) => (
-              <ClassStatCard key={card.label} {...card} />
+              <StatCard key={card.label} {...card} />
             ))}
           </div>
 
@@ -246,7 +188,28 @@ export function ClassManagementSection({
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-              <SearchControl query={query} onQueryChange={setQuery} />
+              <div className="flex h-14 items-center gap-3 rounded-[24px] border border-slate-300/80 bg-white/84 px-4 shadow-[0_14px_28px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.92)] transition-[border-color,box-shadow,background-color] duration-200 hover:border-emerald-400 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.99)_0%,rgba(236,253,245,0.98)_100%)] hover:shadow-[0_0_0_3px_rgba(16,185,129,0.16),0_16px_32px_rgba(15,23,42,0.07)]">
+                <span className="flex size-9 items-center justify-center rounded-2xl bg-[linear-gradient(180deg,#ffffff_0%,#f4faf7_100%)] text-slate-400 shadow-[0_8px_18px_rgba(15,23,42,0.06)]">
+                  <SlidersHorizontal className="size-4" />
+                </span>
+                <Search className="size-4 text-slate-400" />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Cari kelas, jurusan, walas"
+                  className="w-full min-w-[180px] bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400 sm:min-w-[260px]"
+                />
+              </div>
+
+              <div className="w-full sm:w-[180px]">
+                <RadixSelectField
+                  value={statusFilter}
+                  onValueChange={setStatusFilter}
+                  placeholder="Pilih status"
+                  options={statusOptions}
+                  triggerClassName="h-14 rounded-[22px] pl-4"
+                />
+              </div>
 
               <Button
                 variant="outline"
@@ -273,105 +236,78 @@ export function ClassManagementSection({
           </div>
         ) : null}
 
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.28, delay: 0.08, ease: "easeOut" }}
-          className="mt-5 overflow-hidden rounded-[24px] border border-emerald-100/80"
-        >
-          {isLoading ? (
-            <div className="overflow-x-auto">
-              <ClassLoadingTable columnCount={8} />
-            </div>
-          ) : filteredClasses.length === 0 ? (
-            <div className="p-5">
-              <EmptyState
-                icon={Building2}
-                title="Kelas tidak ditemukan"
-                description="Coba ubah pencarian, filter status, atau tambahkan kelas baru."
-                compact
-              />
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full border-separate border-spacing-0 text-left">
-                <thead>
-                  <tr className="bg-[#f3fbf6] text-sm text-slate-700">
-                    {["Kelas", "Jurusan", "Tahun Ajaran", "Walas", "Siswa", "Mapel", "Status", "Aksi"].map((label) => (
-                      <th
-                        key={label}
-                        className={`border-b border-emerald-100/90 px-4 py-4 font-medium first:rounded-tl-[24px] last:rounded-tr-[24px] ${label === "Aksi" ? "text-center" : ""}`}
-                      >
-                        {label}
-                      </th>
-                    ))}
+        <div className="mt-5">
+          <DataTableCard
+            isLoading={isLoading}
+            columnCount={8}
+            isEmpty={filteredClasses.length === 0}
+            emptyTitle="Kelas tidak ditemukan"
+            emptyDescription="Coba ubah pencarian, filter status, atau tambahkan kelas baru."
+            icon={Building2}
+          >
+            <table className="min-w-full border-separate border-spacing-0 text-left">
+              <thead>
+                <tr className="bg-[#f3fbf6] text-sm text-slate-700">
+                  {["Kelas", "Jurusan", "Tahun Ajaran", "Walas", "Siswa", "Mapel", "Status", "Aksi"].map((label) => (
+                    <th
+                      key={label}
+                      className={`border-b border-emerald-100/90 px-4 py-4 font-medium first:rounded-tl-[24px] last:rounded-tr-[24px] ${label === "Aksi" ? "text-center" : ""}`}
+                    >
+                      {label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredClasses.map((item) => (
+                  <tr key={item.id} className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30">
+                    <td className="border-t border-slate-100 px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <span className="flex size-10 items-center justify-center rounded-full bg-[linear-gradient(180deg,#effcf6_0%,#dcfce7_100%)] text-xs font-semibold text-emerald-700">
+                          {item.grade}
+                        </span>
+                        <div>
+                          <p className="font-semibold text-slate-800">{item.display_name}</p>
+                          <p className="text-xs text-slate-400">ID: {item.id}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="border-t border-slate-100 px-4 py-4">
+                      <p className="font-medium text-slate-700">{item.major_code}</p>
+                      <p className="text-xs text-slate-400">{item.major_name}</p>
+                    </td>
+                    <td className="border-t border-slate-100 px-4 py-4 whitespace-nowrap">{item.school_year_name}</td>
+                    <td className="border-t border-slate-100 px-4 py-4">
+                      {item.homeroom_teacher_name ? (
+                        <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+                          {item.homeroom_teacher_name}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+                          Belum Ada
+                        </Badge>
+                      )}
+                    </td>
+                    <td className="border-t border-slate-100 px-4 py-4">{item.student_count}</td>
+                    <td className="border-t border-slate-100 px-4 py-4">{item.subject_assignment_count}</td>
+                    <td className="border-t border-slate-100 px-4 py-4">
+                      <Badge variant="outline" className={item.is_active ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-50 text-slate-500"}>
+                        {item.is_active ? "Aktif" : "Nonaktif"}
+                      </Badge>
+                    </td>
+                    <td className="border-t border-slate-100 px-4 py-4">
+                      <ActionButtons
+                        onEdit={() => setEditingClass(item)}
+                        onDelete={() => setDeleteTarget(item)}
+                        isDeletePending={deleteMutation.isPending}
+                      />
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                    {filteredClasses.map((item) => (
-                      <tr key={item.id} className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30">
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          <div className="flex items-center gap-3">
-                            <span className="flex size-10 items-center justify-center rounded-full bg-[linear-gradient(180deg,#effcf6_0%,#dcfce7_100%)] text-xs font-semibold text-emerald-700">
-                              {item.grade}
-                            </span>
-                            <div>
-                              <p className="font-semibold text-slate-800">{item.display_name}</p>
-                              <p className="text-xs text-slate-400">ID: {item.id}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          <p className="font-medium text-slate-700">{item.major_code}</p>
-                          <p className="text-xs text-slate-400">{item.major_name}</p>
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4 whitespace-nowrap">{item.school_year_name}</td>
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          {item.homeroom_teacher_name ? (
-                            <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
-                              {item.homeroom_teacher_name}
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
-                              Belum Ada
-                            </Badge>
-                          )}
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4">{item.student_count}</td>
-                        <td className="border-t border-slate-100 px-4 py-4">{item.subject_assignment_count}</td>
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          <Badge variant="outline" className={item.is_active ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-50 text-slate-500"}>
-                            {item.is_active ? "Aktif" : "Nonaktif"}
-                          </Badge>
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          <div className="flex items-center justify-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="icon-sm"
-                              className="rounded-[14px] border-emerald-200/80 bg-white text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
-                              onClick={() => setEditingClass(item)}
-                            >
-                              <PencilLine className="size-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="icon-sm"
-                              className="rounded-[14px] border-rose-200/80 bg-white text-rose-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600"
-                              onClick={() => setDeleteTarget(item)}
-                            >
-                              <Trash2 className="size-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  }
-                </tbody>
-              </table>
-            </div>
-          )}
-        </motion.div>
+                ))}
+              </tbody>
+            </table>
+          </DataTableCard>
+        </div>
       </section>
 
       <ClassFormModal
@@ -386,6 +322,7 @@ export function ClassManagementSection({
       />
 
       <ClassFormModal
+        key={editingClass?.id ?? "closed"}
         title="Edit Kelas"
         description="Perbarui identitas kelas tanpa memutus relasi data yang sudah terhubung."
         open={Boolean(editingClass)}
@@ -419,280 +356,5 @@ export function ClassManagementSection({
         isPending={deleteMutation.isPending}
       />
     </>
-  );
-}
-
-function ClassFormModal({
-  title,
-  description,
-  open,
-  initialData,
-  majors,
-  schoolYears,
-  isSubmitting,
-  onOpenChange,
-  onSubmit,
-}: {
-  title: string;
-  description: string;
-  open: boolean;
-  initialData?: AdminClass;
-  majors: AdminMajor[];
-  schoolYears: AdminSchoolYear[];
-  isSubmitting?: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (payload: AdminClassPayload) => void;
-}) {
-  const [form, setForm] = useState<ClassFormState>(emptyForm);
-  const [errors, setErrors] = useState<FieldErrors<ClassFormField>>({});
-
-  useEffect(() => {
-    if (!open) return;
-    setForm(
-      initialData
-        ? {
-            grade: initialData.grade,
-            name: initialData.name,
-            major_id: initialData.major_id,
-            school_year_id: initialData.school_year_id,
-            is_active: initialData.is_active,
-          }
-        : emptyForm,
-    );
-    setErrors({});
-  }, [initialData, open]);
-
-  const validate = () => {
-    const nextErrors: FieldErrors<ClassFormField> = {};
-    validateRequired(nextErrors, "grade", form.grade, "Tingkat kelas");
-    validateRequired(nextErrors, "name", form.name, "Nama rombel");
-    validateRequired(nextErrors, "major_id", form.major_id, "Jurusan");
-    validateRequired(nextErrors, "school_year_id", form.school_year_id, "Tahun ajaran");
-
-    setErrors(nextErrors);
-    return !hasFieldErrors(nextErrors);
-  };
-
-  const handleSubmit = () => {
-    if (!validate()) return;
-
-    onSubmit({
-      grade: form.grade,
-      name: form.name.trim(),
-      major_id: form.major_id,
-      school_year_id: form.school_year_id,
-      is_active: form.is_active,
-    });
-  };
-
-  const handleOpenChange = (nextOpen: boolean) => {
-    onOpenChange(nextOpen);
-    if (!nextOpen) {
-      setForm(emptyForm);
-      setErrors({});
-    }
-  };
-
-  return (
-    <PremiumModal
-      open={open}
-      onOpenChange={handleOpenChange}
-      icon={Building2}
-      title={title}
-      description={description}
-    >
-      <div className="grid gap-5">
-        <div className="grid gap-4 md:grid-cols-2">
-        <FieldGroup label="Tingkat">
-          <Select value={form.grade} onValueChange={(value) => setForm((prev) => ({ ...prev, grade: value ?? "" }))}>
-            <SelectTrigger className={classModalSelectTriggerClassName} style={classModalSelectTriggerStyle}>
-              <span className={form.grade ? "text-slate-700" : "text-slate-400"}>
-                {form.grade || "Pilih tingkat"}
-              </span>
-            </SelectTrigger>
-            <SelectContent className={classModalSelectContentClassName}>
-              {gradeOptions.map((grade) => (
-                <SelectItem key={grade} value={grade} className={classModalSelectItemClassName}>
-                  {grade}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <FieldError message={errors.grade} />
-        </FieldGroup>
-
-        <FieldGroup label="Nama Rombel">
-          <Input
-            value={form.name}
-            onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
-            placeholder="Contoh: 1"
-            className={classModalInputClassName}
-          />
-          <FieldError message={errors.name} />
-        </FieldGroup>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-        <FieldGroup label="Jurusan">
-          <Select value={form.major_id} onValueChange={(value) => setForm((prev) => ({ ...prev, major_id: value ?? "" }))}>
-            <SelectTrigger className={classModalSelectTriggerClassName} style={classModalSelectTriggerStyle}>
-              <span className={form.major_id ? "text-slate-700" : "text-slate-400"}>
-                {majors.find((major) => major.id === form.major_id)?.code ?? "Pilih jurusan"}
-              </span>
-            </SelectTrigger>
-            <SelectContent className={classModalSelectContentClassName}>
-              {majors.map((major) => (
-                <SelectItem key={major.id} value={major.id} className={classModalSelectItemClassName}>
-                  {major.code} - {major.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <FieldError message={errors.major_id} />
-        </FieldGroup>
-
-        <FieldGroup label="Tahun Ajaran">
-          <Select value={form.school_year_id} onValueChange={(value) => setForm((prev) => ({ ...prev, school_year_id: value ?? "" }))}>
-            <SelectTrigger className={classModalSelectTriggerClassName} style={classModalSelectTriggerStyle}>
-              <span className={form.school_year_id ? "text-slate-700" : "text-slate-400"}>
-                {schoolYears.find((year) => year.id === form.school_year_id)?.name ?? "Pilih tahun ajaran"}
-              </span>
-            </SelectTrigger>
-            <SelectContent className={classModalSelectContentClassName}>
-              {schoolYears.map((year) => (
-                <SelectItem key={year.id} value={year.id} className={classModalSelectItemClassName}>
-                  {year.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <FieldError message={errors.school_year_id} />
-        </FieldGroup>
-        </div>
-
-        <FieldGroup label="Status Kelas">
-          <Select
-            value={form.is_active ? "active" : "inactive"}
-            onValueChange={(value) => setForm((prev) => ({ ...prev, is_active: value === "active" }))}
-          >
-            <SelectTrigger className={classModalSelectTriggerClassName} style={classModalSelectTriggerStyle}>
-              <span className="text-slate-700">{form.is_active ? "Aktif" : "Nonaktif"}</span>
-            </SelectTrigger>
-            <SelectContent className={classModalSelectContentClassName}>
-              <SelectItem value="active" className={classModalSelectItemClassName}>Aktif</SelectItem>
-              <SelectItem value="inactive" className={classModalSelectItemClassName}>Nonaktif</SelectItem>
-            </SelectContent>
-          </Select>
-        </FieldGroup>
-
-        <div className={premiumModalActionsClassName}>
-          <Button
-            variant="outline"
-            className="h-12 rounded-[1.1rem] border-slate-200 px-5 text-sm font-semibold text-slate-600"
-            onClick={() => handleOpenChange(false)}
-            disabled={isSubmitting}
-          >
-            Batal
-          </Button>
-          <Button
-            className="h-12 rounded-[1.1rem] bg-[linear-gradient(135deg,#0f766e_0%,#166534_100%)] px-5 text-sm font-semibold text-white shadow-[0_20px_40px_rgba(22,101,52,0.2)] hover:opacity-95"
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-          >
-            <Sparkles className="size-4" />
-            {isSubmitting ? "Menyimpan..." : "Simpan Kelas"}
-          </Button>
-        </div>
-      </div>
-    </PremiumModal>
-  );
-}
-
-function FieldGroup({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className={premiumModalFieldClassName}>
-      <label className={premiumModalLabelClassName}>{label}</label>
-      {children}
-    </div>
-  );
-}
-
-function SearchControl({
-  query,
-  onQueryChange,
-}: {
-  query: string;
-  onQueryChange: (value: string) => void;
-}) {
-  return (
-    <div className="flex h-14 items-center gap-3 rounded-[24px] border border-slate-300/80 bg-white/84 px-4 shadow-[0_14px_28px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.92)] transition-[border-color,box-shadow,background-color] duration-200 hover:border-emerald-400 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.99)_0%,rgba(236,253,245,0.98)_100%)] hover:shadow-[0_0_0_3px_rgba(16,185,129,0.16),0_16px_32px_rgba(15,23,42,0.07)]">
-      <span className="flex size-9 items-center justify-center rounded-2xl bg-[linear-gradient(180deg,#ffffff_0%,#f4faf7_100%)] text-slate-400 shadow-[0_8px_18px_rgba(15,23,42,0.06)]">
-        <SlidersHorizontal className="size-4" />
-      </span>
-      <Search className="size-4 text-slate-400" />
-      <input
-        value={query}
-        onChange={(event) => onQueryChange(event.target.value)}
-        placeholder="Cari kelas, jurusan, walas"
-        className="w-full min-w-[180px] bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400 sm:min-w-[260px]"
-      />
-    </div>
-  );
-}
-
-function ClassStatCard({
-  label,
-  value,
-  icon: Icon,
-  accentClass,
-}: {
-  label: string;
-  value: number;
-  icon: typeof Building2;
-  accentClass: string;
-}) {
-  return (
-    <article className="relative overflow-hidden rounded-[24px] border border-white/80 bg-white/84 p-4 shadow-[0_18px_38px_rgba(15,23,42,0.05)]">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-            {label}
-          </p>
-          <p className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-slate-950">
-            {value}
-          </p>
-        </div>
-        <span className={`flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${accentClass} text-white shadow-[0_18px_30px_rgba(16,185,129,0.18)]`}>
-          <Icon className="size-5" />
-        </span>
-      </div>
-    </article>
-  );
-}
-
-function ClassLoadingTable({ columnCount }: { columnCount: number }) {
-  return (
-    <div className="space-y-1 bg-white p-4">
-      {Array.from({ length: 5 }).map((_, rowIndex) => (
-        <div
-          key={`class-loading-${rowIndex}`}
-          className="grid gap-3"
-          style={{ gridTemplateColumns: `repeat(${columnCount}, minmax(120px, 1fr))` }}
-        >
-          {Array.from({ length: columnCount }).map((__, cellIndex) => (
-            <div
-              key={`class-loading-cell-${rowIndex}-${cellIndex}`}
-              className="h-4 animate-pulse rounded-full bg-slate-100"
-            />
-          ))}
-        </div>
-      ))}
-    </div>
   );
 }

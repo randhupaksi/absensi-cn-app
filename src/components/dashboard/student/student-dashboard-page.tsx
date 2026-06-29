@@ -60,6 +60,7 @@ const reportTypeOptions = [
 export function StudentDashboardPage() {
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const photoPreviewRef = useRef("");
   const [modalOpen, setModalOpen] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState("");
@@ -94,16 +95,12 @@ export function StudentDashboardPage() {
     onError: (error: Error) => toast.error(error.message),
   });
 
-  useEffect(() => {
-    if (!photoFile) {
-      setPhotoPreview("");
-      return;
-    }
-
-    const previewUrl = URL.createObjectURL(photoFile);
-    setPhotoPreview(previewUrl);
-    return () => URL.revokeObjectURL(previewUrl);
-  }, [photoFile]);
+  useEffect(
+    () => () => {
+      if (photoPreviewRef.current) URL.revokeObjectURL(photoPreviewRef.current);
+    },
+    [],
+  );
 
   const dashboard = dashboardQuery.data;
   const today = dashboard?.today;
@@ -121,6 +118,8 @@ export function StudentDashboardPage() {
 
   function resetCaptureState() {
     setPhotoFile(null);
+    if (photoPreviewRef.current) URL.revokeObjectURL(photoPreviewRef.current);
+    photoPreviewRef.current = "";
     setPhotoPreview("");
     setReportType("HADIR");
     setReason("");
@@ -141,7 +140,11 @@ export function StudentDashboardPage() {
 
   function handlePhotoPicked(file?: File) {
     if (!file) return;
+    if (photoPreviewRef.current) URL.revokeObjectURL(photoPreviewRef.current);
+    const previewUrl = URL.createObjectURL(file);
+    photoPreviewRef.current = previewUrl;
     setPhotoFile(file);
+    setPhotoPreview(previewUrl);
     setErrors({});
     setModalOpen(true);
   }
@@ -530,14 +533,15 @@ export function StudentDashboardPage() {
             </div>
           </PremiumModal>
 
-          <CameraModal
-            open={cameraModalOpen}
-            onCapture={(file) => {
-              setCameraModalOpen(false);
-              handlePhotoPicked(file);
-            }}
-            onClose={() => setCameraModalOpen(false)}
-          />
+          {cameraModalOpen ? (
+            <CameraModal
+              onCapture={(file) => {
+                setCameraModalOpen(false);
+                handlePhotoPicked(file);
+              }}
+              onClose={() => setCameraModalOpen(false)}
+            />
+          ) : null}
         </div>
       )}
     </StudentShell>
@@ -564,11 +568,9 @@ function isMobileDevice(): boolean {
 }
 
 function CameraModal({
-  open,
   onCapture,
   onClose,
 }: {
-  open: boolean;
   onCapture: (file: File) => void;
   onClose: () => void;
 }) {
@@ -579,10 +581,6 @@ function CameraModal({
   const [videoReady, setVideoReady] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
-    setCameraError(null);
-    setVideoReady(false);
-
     navigator.mediaDevices
       .getUserMedia({
         video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
@@ -603,7 +601,7 @@ function CameraModal({
       streamRef.current?.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     };
-  }, [open]);
+  }, []);
 
   function stopStream() {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -636,7 +634,7 @@ function CameraModal({
 
   return (
     <PremiumModal
-      open={open}
+      open
       onOpenChange={(isOpen) => { if (!isOpen) handleClose(); }}
       title="Ambil Foto Absensi"
       description="Arahkan kamera ke wajah kamu, lalu klik Ambil Foto."

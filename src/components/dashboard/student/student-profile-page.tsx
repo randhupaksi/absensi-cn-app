@@ -8,10 +8,8 @@ import { useQuery } from "@tanstack/react-query";
 import {
   BadgeCheck,
   BookOpen,
-  CalendarClock,
   GraduationCap,
   IdCard,
-  MapPin,
   Phone,
   ShieldCheck,
   UserRound,

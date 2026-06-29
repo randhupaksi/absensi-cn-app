@@ -13,11 +13,10 @@ export default function manifest(): MetadataRoute.Manifest {
     categories: ["education", "productivity"],
     icons: [
       {
-        src: "/images/logos/logo_cn_downscale.png",
-        sizes: "512x512",
+        src: "/images/optimized/logo-cn.png",
+        sizes: "512x435",
         type: "image/png",
       },
     ],
   };
 }
-

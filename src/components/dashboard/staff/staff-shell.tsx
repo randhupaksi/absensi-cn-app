@@ -8,7 +8,7 @@ import {
 } from "@/lib/auth";
 import type { AuthSession, DashboardRole } from "@/types/auth";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import { StaffSidebar, type StaffSidebarItem } from "./staff-sidebar";
 import { StaffTopbar } from "./staff-topbar";
 
@@ -21,6 +21,8 @@ type StaffShellProps = {
   children: (session: AuthSession) => ReactNode;
 };
 
+const subscribeToHydration = () => () => {};
+
 export function StaffShell({
   expectedRole,
   sidebarItems,
@@ -32,13 +34,8 @@ export function StaffShell({
   const router = useRouter();
   const pathname = usePathname();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [isHydrated, setIsHydrated] = useState(false);
-  const [session, setSession] = useState<AuthSession | null>(null);
-
-  useEffect(() => {
-    setSession(getAuthSession());
-    setIsHydrated(true);
-  }, []);
+  const isHydrated = useSyncExternalStore(subscribeToHydration, () => true, () => false);
+  const session = useMemo(() => (isHydrated ? getAuthSession() : null), [isHydrated]);
 
   const currentRole = session ? mapApiRoleToDashboardRole(session.user.role) : null;
   const isExpectedRole = session && currentRole === expectedRole;

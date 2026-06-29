@@ -16,7 +16,6 @@ import { getBKCounselingOverview } from "@/services/staff.service";
 import type { StaffBKClassSummary, StaffCounselingNote, StaffStudentSummary } from "@/types/staff";
 import {
   ArrowUpDown,
-  BookHeart,
   GraduationCap,
   ListChecks,
   Printer,

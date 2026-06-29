@@ -1,23 +1,26 @@
-﻿"use client";
+"use client";
 
 import dynamic from "next/dynamic";
 import { EmptyState } from "@/components/dashboard/admin/widgets/empty-state";
 import { ScrollableTabsWrapper } from "@/components/dashboard/admin/widgets/scrollable-tabs";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
-import { FieldError } from "@/components/ui/field-error";
-import { Input } from "@/components/ui/input";
 import {
-  PremiumModal,
-  premiumModalActionsClassName,
-  premiumModalFieldClassName,
-  premiumModalHelperClassName,
-  premiumModalLabelClassName,
-} from "@/components/modals/premium-modal";
+  ActionButtons,
+  DataTableCard,
+  StatCard,
+  StatusBadge,
+  getInitials,
+} from "@/components/dashboard/admin/sections/section-ui";
+import { HomeroomAssignmentCreateModal, HomeroomAssignmentEditModal } from "@/components/dashboard/admin/sections/teacher-homeroom-modals";
+import {
+  TeacherProfileCreateModal,
+  TeacherProfileEditModal,
+  type TeacherProfileCreatePayload,
+} from "@/components/dashboard/admin/sections/teacher-profile-modals";
+import { TeacherSubjectAssignmentCreateModal, TeacherSubjectAssignmentEditModal } from "@/components/dashboard/admin/sections/teacher-subject-modals";
+import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
+import { Button } from "@/components/ui/button";
 import { RadixSelectField } from "@/components/ui/radix-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import {
   createAdminHomeroomAssignment,
   createAdminTeacherProfile,
@@ -29,33 +32,19 @@ import {
   getAdminClasses,
   getAdminSchoolYears,
   getAdminSubjects,
-  getAdminUsers,
   updateAdminHomeroomAssignment,
   updateAdminTeacherProfile,
   updateAdminTeacherSubjectAssignment,
   updateAdminUser,
 } from "@/services/admin.service";
 import type {
-  AdminClass,
   AdminHomeroomAssignment,
   AdminHomeroomAssignmentPayload,
-  AdminSchoolYear,
-  AdminSubject,
   AdminTeacherProfile,
-  AdminTeacherProfilePayload,
   AdminTeacherSubjectAssignment,
   AdminTeacherSubjectAssignmentPayload,
-  AdminUser,
 } from "@/types/admin";
-import {
-  type FieldErrors,
-  hasFieldErrors,
-  validateMinLength,
-  validatePhone,
-  validateRequired,
-} from "@/lib/form-validation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { LucideIcon } from "lucide-react";
 import {
   BadgeCheck,
   BookOpen,
@@ -64,19 +53,13 @@ import {
   GraduationCap,
   IdCard,
   LayoutPanelTop,
-  LineChart,
-  PencilLine,
   Plus,
   Search,
   Printer,
   SlidersHorizontal,
-  Sparkles,
-  Trash2,
   UsersRound,
 } from "lucide-react";
-import type { ReactNode } from "react";
-import { useEffect, useDeferredValue, useMemo, useState } from "react";
-import { motion } from "motion/react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 const ImportExcelModal = dynamic(
@@ -134,10 +117,6 @@ export function TeacherSection({
     useState<AdminHomeroomAssignment | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<TeacherDeleteTarget | null>(null);
 
-  const usersQuery = useQuery({
-    queryKey: ["admin-users"],
-    queryFn: getAdminUsers,
-  });
   const subjectsQuery = useQuery({
     queryKey: ["admin-subjects"],
     queryFn: getAdminSubjects,
@@ -319,11 +298,6 @@ export function TeacherSection({
     },
     onError: (error: Error) => toast.error(error.message),
   });
-
-  const teacherUsers = useMemo(
-    () => (usersQuery.data ?? []).filter((user) => user.role === "TEACHER"),
-    [usersQuery.data],
-  );
 
   const normalizedQuery = deferredQuery.trim().toLowerCase();
 
@@ -712,63 +686,62 @@ export function TeacherSection({
                 </thead>
                 <tbody>
                   {filteredTeacherProfiles.map((teacher) => (
-                      <tr
-                        key={teacher.id}
-                        className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30"
-                      >
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          <div className="flex items-center gap-3">
-                            <span className="flex size-9 items-center justify-center rounded-full bg-[linear-gradient(180deg,#fef7ec_0%,#ecfdf5_100%)] text-xs font-semibold text-emerald-700 shadow-[0_8px_20px_rgba(22,85,58,0.08)]">
-                              {getInitials(teacher.name)}
-                            </span>
-                            <div>
-                              <p className="font-medium text-slate-700">
-                                {teacher.name}
-                              </p>
-                              <p className="text-xs text-slate-400">
-                                {teacher.user_id}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          {teacher.username || "-"}
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          <div className="space-y-1">
-                            <p>{teacher.nip || "-"}</p>
+                    <tr
+                      key={teacher.id}
+                      className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30"
+                    >
+                      <td className="border-t border-slate-100 px-4 py-4">
+                        <div className="flex items-center gap-3">
+                          <span className="flex size-9 items-center justify-center rounded-full bg-[linear-gradient(180deg,#fef7ec_0%,#ecfdf5_100%)] text-xs font-semibold text-emerald-700 shadow-[0_8px_20px_rgba(22,85,58,0.08)]">
+                            {getInitials(teacher.name)}
+                          </span>
+                          <div>
+                            <p className="font-medium text-slate-700">
+                              {teacher.name}
+                            </p>
                             <p className="text-xs text-slate-400">
-                              NUPTK: {teacher.nuptk || "-"}
+                              {teacher.user_id}
                             </p>
                           </div>
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          <div className="space-y-1">
-                            <p>{teacher.phone || "-"}</p>
-                            <p className="text-xs text-slate-400">
-                              {teacher.gender || "-"}
-                            </p>
-                          </div>
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          {subjectAssignmentsByTeacher[teacher.id] ?? 0}
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          {homeroomAssignmentsByTeacher[teacher.id] ?? 0}
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          <StatusBadge isActive={teacher.is_active} />
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          <ActionButtons
-                            onEdit={() => setEditingProfile(teacher)}
-                            onDelete={() => setDeleteTarget({ type: "profile", item: teacher })}
-                            isDeletePending={deleteTeacherProfileMutation.isPending}
-                          />
-                        </td>
-                      </tr>
-                    ))
-                  }
+                        </div>
+                      </td>
+                      <td className="border-t border-slate-100 px-4 py-4">
+                        {teacher.username || "-"}
+                      </td>
+                      <td className="border-t border-slate-100 px-4 py-4">
+                        <div className="space-y-1">
+                          <p>{teacher.nip || "-"}</p>
+                          <p className="text-xs text-slate-400">
+                            NUPTK: {teacher.nuptk || "-"}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="border-t border-slate-100 px-4 py-4">
+                        <div className="space-y-1">
+                          <p>{teacher.phone || "-"}</p>
+                          <p className="text-xs text-slate-400">
+                            {teacher.gender || "-"}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="border-t border-slate-100 px-4 py-4">
+                        {subjectAssignmentsByTeacher[teacher.id] ?? 0}
+                      </td>
+                      <td className="border-t border-slate-100 px-4 py-4">
+                        {homeroomAssignmentsByTeacher[teacher.id] ?? 0}
+                      </td>
+                      <td className="border-t border-slate-100 px-4 py-4">
+                        <StatusBadge isActive={teacher.is_active} />
+                      </td>
+                      <td className="border-t border-slate-100 px-4 py-4">
+                        <ActionButtons
+                          onEdit={() => setEditingProfile(teacher)}
+                          onDelete={() => setDeleteTarget({ type: "profile", item: teacher })}
+                          isDeletePending={deleteTeacherProfileMutation.isPending}
+                        />
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </DataTableCard>
@@ -806,43 +779,42 @@ export function TeacherSection({
                 </thead>
                 <tbody>
                   {filteredTeacherSubjectAssignments.map((assignment) => (
-                      <tr
-                        key={assignment.id}
-                        className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30"
-                      >
-                        <td className="border-t border-slate-100 px-4 py-4 font-medium text-slate-700">
-                          {assignment.teacher_name}
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          <div className="space-y-1">
-                            <p>{assignment.subject_name}</p>
-                            <p className="text-xs text-slate-400">
-                              {assignment.subject_code}
-                            </p>
-                          </div>
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          {assignment.class_name}
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          {assignment.school_year_name}
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          <StatusBadge isActive={assignment.is_active} />
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4 text-xs text-slate-400">
-                          {assignment.id}
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          <ActionButtons
-                            onEdit={() => setEditingSubjectAssignment(assignment)}
-                            onDelete={() => setDeleteTarget({ type: "subject", item: assignment })}
-                            isDeletePending={deleteTeacherSubjectAssignmentMutation.isPending}
-                          />
-                        </td>
-                      </tr>
-                    ))
-                  }
+                    <tr
+                      key={assignment.id}
+                      className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30"
+                    >
+                      <td className="border-t border-slate-100 px-4 py-4 font-medium text-slate-700">
+                        {assignment.teacher_name}
+                      </td>
+                      <td className="border-t border-slate-100 px-4 py-4">
+                        <div className="space-y-1">
+                          <p>{assignment.subject_name}</p>
+                          <p className="text-xs text-slate-400">
+                            {assignment.subject_code}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="border-t border-slate-100 px-4 py-4">
+                        {assignment.class_name}
+                      </td>
+                      <td className="border-t border-slate-100 px-4 py-4">
+                        {assignment.school_year_name}
+                      </td>
+                      <td className="border-t border-slate-100 px-4 py-4">
+                        <StatusBadge isActive={assignment.is_active} />
+                      </td>
+                      <td className="border-t border-slate-100 px-4 py-4 text-xs text-slate-400">
+                        {assignment.id}
+                      </td>
+                      <td className="border-t border-slate-100 px-4 py-4">
+                        <ActionButtons
+                          onEdit={() => setEditingSubjectAssignment(assignment)}
+                          onDelete={() => setDeleteTarget({ type: "subject", item: assignment })}
+                          isDeletePending={deleteTeacherSubjectAssignmentMutation.isPending}
+                        />
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </DataTableCard>
@@ -879,35 +851,34 @@ export function TeacherSection({
                 </thead>
                 <tbody>
                   {filteredHomeroomAssignments.map((assignment) => (
-                      <tr
-                        key={assignment.id}
-                        className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30"
-                      >
-                        <td className="border-t border-slate-100 px-4 py-4 font-medium text-slate-700">
-                          {assignment.teacher_name}
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          {assignment.class_name}
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          {assignment.school_year_name}
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          <StatusBadge isActive={assignment.is_active} />
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4 text-xs text-slate-400">
-                          {assignment.id}
-                        </td>
-                        <td className="border-t border-slate-100 px-4 py-4">
-                          <ActionButtons
-                            onEdit={() => setEditingHomeroomAssignment(assignment)}
-                            onDelete={() => setDeleteTarget({ type: "homeroom", item: assignment })}
-                            isDeletePending={deleteHomeroomAssignmentMutation.isPending}
-                          />
-                        </td>
-                      </tr>
-                    ))
-                  }
+                    <tr
+                      key={assignment.id}
+                      className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30"
+                    >
+                      <td className="border-t border-slate-100 px-4 py-4 font-medium text-slate-700">
+                        {assignment.teacher_name}
+                      </td>
+                      <td className="border-t border-slate-100 px-4 py-4">
+                        {assignment.class_name}
+                      </td>
+                      <td className="border-t border-slate-100 px-4 py-4">
+                        {assignment.school_year_name}
+                      </td>
+                      <td className="border-t border-slate-100 px-4 py-4">
+                        <StatusBadge isActive={assignment.is_active} />
+                      </td>
+                      <td className="border-t border-slate-100 px-4 py-4 text-xs text-slate-400">
+                        {assignment.id}
+                      </td>
+                      <td className="border-t border-slate-100 px-4 py-4">
+                        <ActionButtons
+                          onEdit={() => setEditingHomeroomAssignment(assignment)}
+                          onDelete={() => setDeleteTarget({ type: "homeroom", item: assignment })}
+                          isDeletePending={deleteHomeroomAssignmentMutation.isPending}
+                        />
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </DataTableCard>
@@ -938,6 +909,7 @@ export function TeacherSection({
         onSubmit={(payload) => createTeacherProfileMutation.mutate(payload)}
       />
       <TeacherProfileEditModal
+        key={editingProfile?.id ?? "closed"}
         teacher={editingProfile}
         open={Boolean(editingProfile)}
         onOpenChange={(open) => {
@@ -958,6 +930,7 @@ export function TeacherSection({
         onSubmit={(payload) => createTeacherSubjectAssignmentMutation.mutate(payload)}
       />
       <TeacherSubjectAssignmentEditModal
+        key={editingSubjectAssignment?.id ?? "closed"}
         assignment={editingSubjectAssignment}
         open={Boolean(editingSubjectAssignment)}
         onOpenChange={(open) => {
@@ -987,6 +960,7 @@ export function TeacherSection({
         onSubmit={(payload) => createHomeroomAssignmentMutation.mutate(payload)}
       />
       <HomeroomAssignmentEditModal
+        key={editingHomeroomAssignment?.id ?? "closed"}
         assignment={editingHomeroomAssignment}
         open={Boolean(editingHomeroomAssignment)}
         onOpenChange={(open) => {
@@ -1049,1046 +1023,4 @@ function getTeacherDeleteDescription(target: TeacherDeleteTarget | null) {
     return `Assignment mapel "${target.item.subject_name}" untuk ${target.item.teacher_name} akan dihapus permanen.`;
   }
   return `Assignment wali kelas "${target.item.class_name}" untuk ${target.item.teacher_name} akan dihapus permanen.`;
-}
-
-function TeacherProfileCreateModal({
-  open,
-  onOpenChange,
-  isPending,
-  onSubmit,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  isPending: boolean;
-  onSubmit: (payload: TeacherProfileCreatePayload) => void;
-}) {
-  const [form, setForm] = useState<TeacherProfileCreatePayload>({
-    name: "",
-    username: "",
-    password: "",
-    nip: "",
-    nuptk: "",
-    gender: "",
-    phone: "",
-    address: "",
-    is_active: true,
-  });
-  const [errors, setErrors] = useState<FieldErrors<keyof TeacherProfileCreatePayload>>({});
-
-  const reset = () => {
-    setForm({
-      name: "",
-      username: "",
-      password: "",
-      nip: "",
-      nuptk: "",
-      gender: "",
-      phone: "",
-      address: "",
-      is_active: true,
-    });
-    setErrors({});
-  };
-
-  const handleOpenChange = (nextOpen: boolean) => {
-    onOpenChange(nextOpen);
-    if (!nextOpen) {
-      reset();
-    }
-  };
-
-  const handleSubmit = () => {
-    const nextErrors = validateTeacherProfileForm(form, false);
-    setErrors(nextErrors);
-    if (hasFieldErrors(nextErrors)) return;
-    onSubmit(form);
-  };
-
-  return (
-    <PremiumModal
-      open={open}
-      onOpenChange={handleOpenChange}
-      title="Tambah Profil Guru"
-      description="Lengkapi data profil guru tanpa berpindah ke halaman lain."
-      icon={FilePenLine}
-    >
-      <div className="grid gap-5">
-        <div className="grid gap-4 md:grid-cols-2">
-          <FieldGroup label="Nama Guru">
-            <Input
-              value={form.name}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, name: event.target.value }))
-              }
-              placeholder="Masukkan nama guru"
-              className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]"
-            />
-            <FieldError message={errors.name} />
-          </FieldGroup>
-          <FieldGroup label="Username Login">
-            <Input
-              value={form.username}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, username: event.target.value }))
-              }
-              placeholder="Masukkan username guru"
-              className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]"
-            />
-            <FieldError message={errors.username} />
-          </FieldGroup>
-        </div>
-
-        <FieldGroup label="Password Login">
-          <Input
-            value={form.password}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, password: event.target.value }))
-            }
-            placeholder="Minimal 6 karakter"
-            className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]"
-          />
-          <FieldError message={errors.password} />
-        </FieldGroup>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <FieldGroup label="NIP">
-            <Input
-              value={form.nip}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, nip: event.target.value }))
-              }
-              placeholder="Masukkan NIP guru"
-              className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]"
-            />
-            <FieldError message={errors.nip} />
-          </FieldGroup>
-          <FieldGroup label="NUPTK">
-            <Input
-              value={form.nuptk}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, nuptk: event.target.value }))
-              }
-              placeholder="Masukkan NUPTK guru"
-              className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]"
-            />
-            <FieldError message={errors.nuptk} />
-          </FieldGroup>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <FieldGroup label="Jenis Kelamin">
-            <RadixSelectField
-              value={form.gender}
-              onValueChange={(value) => setForm((current) => ({ ...current, gender: value }))}
-              placeholder="Pilih jenis kelamin"
-              options={[
-                { value: "MALE", label: "Laki-laki" },
-                { value: "FEMALE", label: "Perempuan" },
-              ]}
-            />
-            <FieldError message={errors.gender} />
-          </FieldGroup>
-          <FieldGroup label="Status Aktif">
-            <RadixSelectField
-              value={String(form.is_active)}
-              onValueChange={(value) =>
-                setForm((current) => ({ ...current, is_active: value === "true" }))
-              }
-              placeholder="Pilih status aktif"
-              options={[
-                { value: "true", label: "Aktif" },
-                { value: "false", label: "Nonaktif" },
-              ]}
-            />
-            <FieldError message={errors.is_active} />
-          </FieldGroup>
-        </div>
-
-        <div className="grid gap-4">
-          <FieldGroup label="Telepon">
-            <Input
-              value={form.phone}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, phone: event.target.value }))
-              }
-              placeholder="08xxxxxxxxxx"
-              className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]"
-            />
-            <FieldError message={errors.phone} />
-          </FieldGroup>
-        </div>
-
-        <FieldGroup
-          label="Alamat"
-          helper="Gunakan alamat singkat yang mudah dibaca admin untuk kebutuhan data master."
-        >
-          <Textarea
-            value={form.address}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, address: event.target.value }))
-            }
-            placeholder="Masukkan alamat guru"
-            className="min-h-[140px] rounded-[1.4rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 py-3 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]"
-          />
-          <FieldError message={errors.address} />
-        </FieldGroup>
-
-        <ModalActions
-          isPending={isPending}
-          onCancel={() => handleOpenChange(false)}
-          onSubmit={handleSubmit}
-          submitLabel="Simpan Profil Guru"
-        />
-      </div>
-    </PremiumModal>
-  );
-}
-
-function TeacherProfileEditModal({
-  teacher,
-  open,
-  onOpenChange,
-  isPending,
-  onSubmit,
-}: {
-  teacher: AdminTeacherProfile | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  isPending: boolean;
-  onSubmit: (payload: TeacherProfileCreatePayload) => void;
-}) {
-  const [form, setForm] = useState<TeacherProfileCreatePayload>({
-    name: "",
-    username: "",
-    password: "",
-    nip: "",
-    nuptk: "",
-    gender: "",
-    phone: "",
-    address: "",
-    is_active: true,
-  });
-  const [errors, setErrors] = useState<FieldErrors<keyof TeacherProfileCreatePayload>>({});
-
-  useEffect(() => {
-    if (!teacher) return;
-    setForm({
-      name: teacher.name,
-      username: teacher.username ?? "",
-      password: "",
-      nip: teacher.nip ?? "",
-      nuptk: teacher.nuptk ?? "",
-      gender: teacher.gender ?? "",
-      phone: teacher.phone ?? "",
-      address: teacher.address ?? "",
-      is_active: teacher.is_active,
-    });
-    setErrors({});
-  }, [teacher]);
-
-  const handleSubmit = () => {
-    const nextErrors = validateTeacherProfileForm(form, true);
-    setErrors(nextErrors);
-    if (hasFieldErrors(nextErrors)) return;
-    onSubmit(form);
-  };
-
-  if (!teacher) return null;
-
-  return (
-    <PremiumModal
-      open={open}
-      onOpenChange={onOpenChange}
-      title="Edit Profil Guru"
-      description="Perbarui akun dan profil guru tanpa membuka halaman lain."
-      icon={FilePenLine}
-    >
-      <div className="grid gap-5">
-        <div className="grid gap-4 md:grid-cols-2">
-          <FieldGroup label="Nama Guru">
-            <Input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="Masukkan nama guru" className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]" />
-            <FieldError message={errors.name} />
-          </FieldGroup>
-          <FieldGroup label="Username Login">
-            <Input value={form.username} onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))} placeholder="Masukkan username guru" className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]" />
-            <FieldError message={errors.username} />
-          </FieldGroup>
-        </div>
-
-        <FieldGroup label="Password Baru">
-          <Input value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} placeholder="Kosongkan jika tidak diubah" className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]" />
-          <FieldError message={errors.password} />
-        </FieldGroup>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <FieldGroup label="NIP">
-            <Input value={form.nip} onChange={(event) => setForm((current) => ({ ...current, nip: event.target.value }))} placeholder="Masukkan NIP guru" className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]" />
-            <FieldError message={errors.nip} />
-          </FieldGroup>
-          <FieldGroup label="NUPTK">
-            <Input value={form.nuptk} onChange={(event) => setForm((current) => ({ ...current, nuptk: event.target.value }))} placeholder="Masukkan NUPTK guru" className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]" />
-            <FieldError message={errors.nuptk} />
-          </FieldGroup>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <FieldGroup label="Jenis Kelamin">
-            <RadixSelectField value={form.gender} onValueChange={(value) => setForm((current) => ({ ...current, gender: value }))} placeholder="Pilih jenis kelamin" options={[{ value: "MALE", label: "Laki-laki" }, { value: "FEMALE", label: "Perempuan" }]} />
-            <FieldError message={errors.gender} />
-          </FieldGroup>
-          <FieldGroup label="Status Aktif">
-            <RadixSelectField value={String(form.is_active)} onValueChange={(value) => setForm((current) => ({ ...current, is_active: value === "true" }))} placeholder="Pilih status aktif" options={[{ value: "true", label: "Aktif" }, { value: "false", label: "Nonaktif" }]} />
-            <FieldError message={errors.is_active} />
-          </FieldGroup>
-        </div>
-
-        <FieldGroup label="Telepon">
-          <Input value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} placeholder="08xxxxxxxxxx" className="h-14 rounded-[1.25rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]" />
-          <FieldError message={errors.phone} />
-        </FieldGroup>
-
-        <FieldGroup label="Alamat" helper="Gunakan alamat singkat yang mudah dibaca admin untuk kebutuhan data master.">
-          <Textarea value={form.address} onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))} placeholder="Masukkan alamat guru" className="min-h-[140px] rounded-[1.4rem] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-4 py-3 text-sm shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]" />
-          <FieldError message={errors.address} />
-        </FieldGroup>
-
-        <ModalActions isPending={isPending} onCancel={() => onOpenChange(false)} onSubmit={handleSubmit} submitLabel="Update Profil Guru" />
-      </div>
-    </PremiumModal>
-  );
-}
-
-function TeacherSubjectAssignmentCreateModal({
-  open,
-  onOpenChange,
-  teacherProfiles,
-  subjects,
-  classes,
-  schoolYears,
-  isPending,
-  onSubmit,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  teacherProfiles: AdminTeacherProfile[];
-  subjects: AdminSubject[];
-  classes: AdminClass[];
-  schoolYears: AdminSchoolYear[];
-  isPending: boolean;
-  onSubmit: (payload: AdminTeacherSubjectAssignmentPayload) => void;
-}) {
-  const [form, setForm] = useState<AdminTeacherSubjectAssignmentPayload>({
-    teacher_id: "",
-    subject_id: "",
-    class_id: "",
-    school_year_id: "",
-    is_active: true,
-  });
-  const [errors, setErrors] = useState<FieldErrors<keyof AdminTeacherSubjectAssignmentPayload>>({});
-
-  const reset = () => {
-    setForm({
-      teacher_id: "",
-      subject_id: "",
-      class_id: "",
-      school_year_id: "",
-      is_active: true,
-    });
-    setErrors({});
-  };
-
-  const handleOpenChange = (nextOpen: boolean) => {
-    onOpenChange(nextOpen);
-    if (!nextOpen) {
-      reset();
-    }
-  };
-
-  const handleSubmit = () => {
-    const nextErrors = validateTeacherSubjectAssignmentForm(form);
-    setErrors(nextErrors);
-    if (hasFieldErrors(nextErrors)) return;
-    onSubmit(form);
-  };
-
-  return (
-    <PremiumModal
-      open={open}
-      onOpenChange={handleOpenChange}
-      title="Tambah Assignment Mapel"
-      description="Buat relasi guru ke mapel dan kelas untuk tahun ajaran yang relevan."
-      icon={BookOpen}
-    >
-      <div className="grid gap-5">
-        <div className="grid gap-4 md:grid-cols-2">
-          <FieldGroup label="Guru">
-            <RadixSelectField
-              value={form.teacher_id}
-              onValueChange={(value) =>
-                setForm((current) => ({ ...current, teacher_id: value }))
-              }
-              placeholder="Pilih guru"
-              options={teacherProfiles.map((teacher) => ({
-                value: teacher.id,
-                label: teacher.name,
-                description: teacher.nip || teacher.username || teacher.id,
-              }))}
-            />
-            <FieldError message={errors.teacher_id} />
-          </FieldGroup>
-          <FieldGroup label="Mapel">
-            <RadixSelectField
-              value={form.subject_id}
-              onValueChange={(value) =>
-                setForm((current) => ({ ...current, subject_id: value }))
-              }
-              placeholder="Pilih mapel"
-              options={subjects.map((subject) => ({
-                value: subject.id,
-                label: subject.name,
-                description: subject.code,
-              }))}
-            />
-            <FieldError message={errors.subject_id} />
-          </FieldGroup>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <FieldGroup label="Kelas">
-            <RadixSelectField
-              value={form.class_id}
-              onValueChange={(value) =>
-                setForm((current) => ({ ...current, class_id: value }))
-              }
-              placeholder="Pilih kelas"
-              options={classes.map((item) => ({
-                value: item.id,
-                label: item.display_name,
-                description: item.school_year_name,
-              }))}
-            />
-            <FieldError message={errors.class_id} />
-          </FieldGroup>
-          <FieldGroup label="Tahun Ajaran">
-            <RadixSelectField
-              value={form.school_year_id}
-              onValueChange={(value) =>
-                setForm((current) => ({ ...current, school_year_id: value }))
-              }
-              placeholder="Pilih tahun ajaran"
-              options={schoolYears.map((item) => ({
-                value: item.id,
-                label: item.name,
-              }))}
-            />
-            <FieldError message={errors.school_year_id} />
-          </FieldGroup>
-        </div>
-
-        <FieldGroup label="Status Assignment">
-          <RadixSelectField
-            value={String(form.is_active)}
-            onValueChange={(value) =>
-              setForm((current) => ({ ...current, is_active: value === "true" }))
-            }
-            placeholder="Pilih status"
-            options={[
-              { value: "true", label: "Aktif" },
-              { value: "false", label: "Nonaktif" },
-            ]}
-          />
-          <FieldError message={errors.is_active} />
-        </FieldGroup>
-
-        <ModalActions
-          isPending={isPending}
-          onCancel={() => handleOpenChange(false)}
-          onSubmit={handleSubmit}
-          submitLabel="Simpan Assignment Mapel"
-        />
-      </div>
-    </PremiumModal>
-  );
-}
-
-function TeacherSubjectAssignmentEditModal({
-  assignment,
-  open,
-  onOpenChange,
-  teacherProfiles,
-  subjects,
-  classes,
-  schoolYears,
-  isPending,
-  onSubmit,
-}: {
-  assignment: AdminTeacherSubjectAssignment | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  teacherProfiles: AdminTeacherProfile[];
-  subjects: AdminSubject[];
-  classes: AdminClass[];
-  schoolYears: AdminSchoolYear[];
-  isPending: boolean;
-  onSubmit: (payload: AdminTeacherSubjectAssignmentPayload) => void;
-}) {
-  const [form, setForm] = useState<AdminTeacherSubjectAssignmentPayload>({
-    teacher_id: "",
-    subject_id: "",
-    class_id: "",
-    school_year_id: "",
-    is_active: true,
-  });
-  const [errors, setErrors] = useState<FieldErrors<keyof AdminTeacherSubjectAssignmentPayload>>({});
-
-  useEffect(() => {
-    if (!assignment) return;
-    setForm({
-      teacher_id: assignment.teacher_id,
-      subject_id: assignment.subject_id,
-      class_id: assignment.class_id,
-      school_year_id: assignment.school_year_id,
-      is_active: assignment.is_active,
-    });
-    setErrors({});
-  }, [assignment]);
-
-  const handleSubmit = () => {
-    const nextErrors = validateTeacherSubjectAssignmentForm(form);
-    setErrors(nextErrors);
-    if (hasFieldErrors(nextErrors)) return;
-    onSubmit(form);
-  };
-
-  if (!assignment) return null;
-
-  return (
-    <PremiumModal open={open} onOpenChange={onOpenChange} title="Edit Assignment Mapel" description="Perbarui relasi guru, mapel, kelas, dan tahun ajaran sesuai kebutuhan." icon={BookOpen}>
-      <div className="grid gap-5">
-        <div className="grid gap-4 md:grid-cols-2">
-          <FieldGroup label="Guru">
-            <RadixSelectField value={form.teacher_id} onValueChange={(value) => setForm((current) => ({ ...current, teacher_id: value }))} placeholder="Pilih guru" options={teacherProfiles.map((teacher) => ({ value: teacher.id, label: teacher.name, description: teacher.nip || teacher.username || teacher.id }))} />
-            <FieldError message={errors.teacher_id} />
-          </FieldGroup>
-          <FieldGroup label="Mapel">
-            <RadixSelectField value={form.subject_id} onValueChange={(value) => setForm((current) => ({ ...current, subject_id: value }))} placeholder="Pilih mapel" options={subjects.map((subject) => ({ value: subject.id, label: subject.name, description: subject.code }))} />
-            <FieldError message={errors.subject_id} />
-          </FieldGroup>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <FieldGroup label="Kelas">
-            <RadixSelectField value={form.class_id} onValueChange={(value) => setForm((current) => ({ ...current, class_id: value }))} placeholder="Pilih kelas" options={classes.map((item) => ({ value: item.id, label: item.display_name, description: item.school_year_name }))} />
-            <FieldError message={errors.class_id} />
-          </FieldGroup>
-          <FieldGroup label="Tahun Ajaran">
-            <RadixSelectField value={form.school_year_id} onValueChange={(value) => setForm((current) => ({ ...current, school_year_id: value }))} placeholder="Pilih tahun ajaran" options={schoolYears.map((item) => ({ value: item.id, label: item.name }))} />
-            <FieldError message={errors.school_year_id} />
-          </FieldGroup>
-        </div>
-
-        <FieldGroup label="Status Assignment">
-          <RadixSelectField value={String(form.is_active)} onValueChange={(value) => setForm((current) => ({ ...current, is_active: value === "true" }))} placeholder="Pilih status" options={[{ value: "true", label: "Aktif" }, { value: "false", label: "Nonaktif" }]} />
-          <FieldError message={errors.is_active} />
-        </FieldGroup>
-
-        <ModalActions isPending={isPending} onCancel={() => onOpenChange(false)} onSubmit={handleSubmit} submitLabel="Update Assignment Mapel" />
-      </div>
-    </PremiumModal>
-  );
-}
-
-function HomeroomAssignmentCreateModal({
-  open,
-  onOpenChange,
-  teacherProfiles,
-  classes,
-  schoolYears,
-  isPending,
-  onSubmit,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  teacherProfiles: AdminTeacherProfile[];
-  classes: AdminClass[];
-  schoolYears: AdminSchoolYear[];
-  isPending: boolean;
-  onSubmit: (payload: AdminHomeroomAssignmentPayload) => void;
-}) {
-  const [form, setForm] = useState<AdminHomeroomAssignmentPayload>({
-    teacher_id: "",
-    class_id: "",
-    school_year_id: "",
-    is_active: true,
-  });
-  const [errors, setErrors] = useState<FieldErrors<keyof AdminHomeroomAssignmentPayload>>({});
-
-  const reset = () => {
-    setForm({
-      teacher_id: "",
-      class_id: "",
-      school_year_id: "",
-      is_active: true,
-    });
-    setErrors({});
-  };
-
-  const handleOpenChange = (nextOpen: boolean) => {
-    onOpenChange(nextOpen);
-    if (!nextOpen) {
-      reset();
-    }
-  };
-
-  const handleSubmit = () => {
-    const nextErrors = validateHomeroomAssignmentForm(form);
-    setErrors(nextErrors);
-    if (hasFieldErrors(nextErrors)) return;
-    onSubmit(form);
-  };
-
-  return (
-    <PremiumModal
-      open={open}
-      onOpenChange={handleOpenChange}
-      title="Tambah Assignment Walas"
-      description="Tentukan guru yang menjadi wali kelas untuk rombel dan tahun ajaran tertentu."
-      icon={GraduationCap}
-    >
-      <div className="grid gap-5">
-        <div className="grid gap-4 md:grid-cols-2">
-          <FieldGroup label="Guru">
-            <RadixSelectField
-              value={form.teacher_id}
-              onValueChange={(value) =>
-                setForm((current) => ({ ...current, teacher_id: value }))
-              }
-              placeholder="Pilih guru"
-              options={teacherProfiles.map((teacher) => ({
-                value: teacher.id,
-                label: teacher.name,
-                description: teacher.nip || teacher.username || teacher.id,
-              }))}
-            />
-            <FieldError message={errors.teacher_id} />
-          </FieldGroup>
-          <FieldGroup label="Kelas">
-            <RadixSelectField
-              value={form.class_id}
-              onValueChange={(value) =>
-                setForm((current) => ({ ...current, class_id: value }))
-              }
-              placeholder="Pilih kelas walas"
-              options={classes.map((item) => ({
-                value: item.id,
-                label: item.display_name,
-                description: item.school_year_name,
-              }))}
-            />
-            <FieldError message={errors.class_id} />
-          </FieldGroup>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <FieldGroup label="Tahun Ajaran">
-            <RadixSelectField
-              value={form.school_year_id}
-              onValueChange={(value) =>
-                setForm((current) => ({ ...current, school_year_id: value }))
-              }
-              placeholder="Pilih tahun ajaran"
-              options={schoolYears.map((item) => ({
-                value: item.id,
-                label: item.name,
-              }))}
-            />
-            <FieldError message={errors.school_year_id} />
-          </FieldGroup>
-          <FieldGroup label="Status Assignment">
-            <RadixSelectField
-              value={String(form.is_active)}
-              onValueChange={(value) =>
-                setForm((current) => ({ ...current, is_active: value === "true" }))
-              }
-              placeholder="Pilih status"
-              options={[
-                { value: "true", label: "Aktif" },
-                { value: "false", label: "Nonaktif" },
-              ]}
-            />
-            <FieldError message={errors.is_active} />
-          </FieldGroup>
-        </div>
-
-        <ModalActions
-          isPending={isPending}
-          onCancel={() => handleOpenChange(false)}
-          onSubmit={handleSubmit}
-          submitLabel="Simpan Assignment Walas"
-        />
-      </div>
-    </PremiumModal>
-  );
-}
-
-function HomeroomAssignmentEditModal({
-  assignment,
-  open,
-  onOpenChange,
-  teacherProfiles,
-  classes,
-  schoolYears,
-  isPending,
-  onSubmit,
-}: {
-  assignment: AdminHomeroomAssignment | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  teacherProfiles: AdminTeacherProfile[];
-  classes: AdminClass[];
-  schoolYears: AdminSchoolYear[];
-  isPending: boolean;
-  onSubmit: (payload: AdminHomeroomAssignmentPayload) => void;
-}) {
-  const [form, setForm] = useState<AdminHomeroomAssignmentPayload>({
-    teacher_id: "",
-    class_id: "",
-    school_year_id: "",
-    is_active: true,
-  });
-  const [errors, setErrors] = useState<FieldErrors<keyof AdminHomeroomAssignmentPayload>>({});
-
-  useEffect(() => {
-    if (!assignment) return;
-    setForm({
-      teacher_id: assignment.teacher_id,
-      class_id: assignment.class_id,
-      school_year_id: assignment.school_year_id,
-      is_active: assignment.is_active,
-    });
-    setErrors({});
-  }, [assignment]);
-
-  const handleSubmit = () => {
-    const nextErrors = validateHomeroomAssignmentForm(form);
-    setErrors(nextErrors);
-    if (hasFieldErrors(nextErrors)) return;
-    onSubmit(form);
-  };
-
-  if (!assignment) return null;
-
-  return (
-    <PremiumModal open={open} onOpenChange={onOpenChange} title="Edit Assignment Walas" description="Perbarui penugasan wali kelas untuk kelas dan tahun ajaran tertentu." icon={GraduationCap}>
-      <div className="grid gap-5">
-        <div className="grid gap-4 md:grid-cols-2">
-          <FieldGroup label="Guru">
-            <RadixSelectField value={form.teacher_id} onValueChange={(value) => setForm((current) => ({ ...current, teacher_id: value }))} placeholder="Pilih guru" options={teacherProfiles.map((teacher) => ({ value: teacher.id, label: teacher.name, description: teacher.nip || teacher.username || teacher.id }))} />
-            <FieldError message={errors.teacher_id} />
-          </FieldGroup>
-          <FieldGroup label="Kelas">
-            <RadixSelectField value={form.class_id} onValueChange={(value) => setForm((current) => ({ ...current, class_id: value }))} placeholder="Pilih kelas walas" options={classes.map((item) => ({ value: item.id, label: item.display_name, description: item.school_year_name }))} />
-            <FieldError message={errors.class_id} />
-          </FieldGroup>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <FieldGroup label="Tahun Ajaran">
-            <RadixSelectField value={form.school_year_id} onValueChange={(value) => setForm((current) => ({ ...current, school_year_id: value }))} placeholder="Pilih tahun ajaran" options={schoolYears.map((item) => ({ value: item.id, label: item.name }))} />
-            <FieldError message={errors.school_year_id} />
-          </FieldGroup>
-          <FieldGroup label="Status Assignment">
-            <RadixSelectField value={String(form.is_active)} onValueChange={(value) => setForm((current) => ({ ...current, is_active: value === "true" }))} placeholder="Pilih status" options={[{ value: "true", label: "Aktif" }, { value: "false", label: "Nonaktif" }]} />
-            <FieldError message={errors.is_active} />
-          </FieldGroup>
-        </div>
-
-        <ModalActions isPending={isPending} onCancel={() => onOpenChange(false)} onSubmit={handleSubmit} submitLabel="Update Assignment Walas" />
-      </div>
-    </PremiumModal>
-  );
-}
-
-function ModalActions({
-  isPending,
-  onCancel,
-  onSubmit,
-  submitLabel,
-}: {
-  isPending: boolean;
-  onCancel: () => void;
-  onSubmit: () => void;
-  submitLabel: string;
-}) {
-  return (
-    <div className={premiumModalActionsClassName}>
-      <Button
-        variant="outline"
-        className="h-12 rounded-[1.1rem] border-slate-200 px-5 text-sm font-semibold text-slate-600"
-        onClick={onCancel}
-        disabled={isPending}
-      >
-        Batal
-      </Button>
-      <Button
-        className="h-12 rounded-[1.1rem] bg-[linear-gradient(135deg,#0f766e_0%,#166534_100%)] px-5 text-sm font-semibold text-white shadow-[0_20px_40px_rgba(22,101,52,0.2)] hover:opacity-95"
-        onClick={onSubmit}
-        disabled={isPending}
-      >
-        <Sparkles className="size-4" />
-        {isPending ? "Menyimpan..." : submitLabel}
-      </Button>
-    </div>
-  );
-}
-
-function FieldGroup({
-  label,
-  helper,
-  children,
-}: {
-  label: string;
-  helper?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className={premiumModalFieldClassName}>
-      <label className={premiumModalLabelClassName}>{label}</label>
-      {helper ? <p className={premiumModalHelperClassName}>{helper}</p> : null}
-      {children}
-    </div>
-  );
-}
-
-function DataTableCard({
-  children,
-  icon,
-  emptyTitle,
-  emptyDescription,
-  isLoading,
-  columnCount,
-  isEmpty,
-}: {
-  children: ReactNode;
-  icon: LucideIcon;
-  emptyTitle: string;
-  emptyDescription: string;
-  isLoading: boolean;
-  columnCount: number;
-  isEmpty: boolean;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.28, delay: 0.08, ease: "easeOut" }}
-      className="overflow-hidden rounded-[24px] border border-emerald-100/80"
-    >
-      {isLoading ? (
-        <div className="overflow-x-auto">
-          <LoadingTable columnCount={columnCount} />
-        </div>
-      ) : isEmpty ? (
-        <div className="p-5">
-          <EmptyState icon={icon} title={emptyTitle} description={emptyDescription} compact />
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
-          {children}
-        </div>
-      )}
-    </motion.div>
-  );
-}
-
-function LoadingTable({ columnCount }: { columnCount: number }) {
-  return (
-    <div className="space-y-3 px-4 py-4">
-      {Array.from({ length: 5 }).map((_, rowIndex) => (
-        <div
-          key={`teacher-loading-${rowIndex}`}
-          className="grid gap-3"
-          style={{ gridTemplateColumns: `repeat(${columnCount}, minmax(120px, 1fr))` }}
-        >
-          {Array.from({ length: columnCount }).map((__, cellIndex) => (
-            <div
-              key={`teacher-loading-cell-${rowIndex}-${cellIndex}`}
-              className="h-4 animate-pulse rounded-full bg-slate-100"
-            />
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function EmptyRow({
-  colSpan,
-  icon,
-  title,
-  description,
-}: {
-  colSpan: number;
-  icon: LucideIcon;
-  title: string;
-  description: string;
-}) {
-  return (
-    <tr className="bg-white">
-      <td colSpan={colSpan} className="p-5">
-        <EmptyState
-          icon={icon}
-          title={title}
-          description={description}
-          compact
-        />
-      </td>
-    </tr>
-  );
-}
-
-function ActionButtons({
-  onEdit,
-  onDelete,
-  isDeletePending,
-}: {
-  onEdit: () => void;
-  onDelete: () => void;
-  isDeletePending?: boolean;
-}) {
-  return (
-    <div className="flex items-center justify-center gap-2">
-      <Button
-        variant="outline"
-        size="icon-sm"
-        className="rounded-[14px] border-emerald-200/80 bg-white text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
-        onClick={onEdit}
-      >
-        <PencilLine className="size-4" />
-      </Button>
-      <Button
-        variant="outline"
-        size="icon-sm"
-        className="rounded-[14px] border-red-200/80 bg-white text-red-500 hover:border-red-300 hover:bg-red-50 hover:text-red-500"
-        onClick={onDelete}
-        disabled={isDeletePending}
-      >
-        <Trash2 className="size-4" />
-      </Button>
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  accentClass,
-}: {
-  label: string;
-  value: number;
-  icon: LucideIcon;
-  accentClass: string;
-}) {
-  return (
-    <div className="group relative overflow-hidden rounded-[26px] border border-white/75 bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(244,252,248,0.96)_100%)] p-4 shadow-[0_18px_34px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_54px_rgba(15,23,42,0.1)]">
-      <div className="absolute right-[-10px] top-[-26px] h-24 w-24 rounded-full bg-emerald-100/40 blur-2xl transition duration-300 group-hover:scale-110" />
-      <div className="relative flex items-start justify-between gap-4">
-        <div className="space-y-2">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-            {label}
-          </p>
-          <p className="text-[2.15rem] font-semibold tracking-[-0.04em] text-slate-950">
-            {value}
-          </p>
-        </div>
-
-        <div className="flex shrink-0 flex-col items-center text-right">
-          <span
-            className={`inline-flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br ${accentClass} text-white shadow-[0_14px_28px_rgba(15,23,42,0.16)]`}
-          >
-            <Icon className="size-5" />
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function StatusBadge({ isActive }: { isActive: boolean }) {
-  return (
-    <Badge
-      variant="outline"
-      className={
-        isActive
-          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-          : "border-slate-200 bg-slate-100 text-slate-500"
-      }
-    >
-      {isActive ? "Aktif" : "Nonaktif"}
-    </Badge>
-  );
-}
-
-type TeacherProfileCreatePayload = {
-  name: string;
-  username: string;
-  password: string;
-  nip: string;
-  nuptk: string;
-  gender: string;
-  phone: string;
-  address: string;
-  is_active: boolean;
-};
-
-function validateTeacherProfileForm(
-  form: TeacherProfileCreatePayload,
-  isEdit: boolean,
-): FieldErrors<keyof TeacherProfileCreatePayload> {
-  const errors: FieldErrors<keyof TeacherProfileCreatePayload> = {};
-  validateRequired(errors, "name", form.name, "Nama guru");
-  validateRequired(errors, "username", form.username, "Username login");
-  validateMinLength(errors, "password", form.password, 6, isEdit ? "Password baru" : "Password login", {
-    allowEmpty: isEdit,
-  });
-  if (!isEdit) validateRequired(errors, "nip", form.nip, "NIP");
-  if (!isEdit) validateRequired(errors, "nuptk", form.nuptk, "NUPTK");
-  validateRequired(errors, "gender", form.gender, "Jenis kelamin");
-  validatePhone(errors, "phone", form.phone, "Telepon", { allowEmpty: true });
-  return errors;
-}
-
-function validateTeacherSubjectAssignmentForm(
-  form: AdminTeacherSubjectAssignmentPayload,
-): FieldErrors<keyof AdminTeacherSubjectAssignmentPayload> {
-  const errors: FieldErrors<keyof AdminTeacherSubjectAssignmentPayload> = {};
-  validateRequired(errors, "teacher_id", form.teacher_id, "Guru");
-  validateRequired(errors, "subject_id", form.subject_id, "Mapel");
-  validateRequired(errors, "class_id", form.class_id, "Kelas");
-  validateRequired(errors, "school_year_id", form.school_year_id, "Tahun ajaran");
-  validateRequired(errors, "is_active", String(form.is_active), "Status assignment");
-  return errors;
-}
-
-function validateHomeroomAssignmentForm(
-  form: AdminHomeroomAssignmentPayload,
-): FieldErrors<keyof AdminHomeroomAssignmentPayload> {
-  const errors: FieldErrors<keyof AdminHomeroomAssignmentPayload> = {};
-  validateRequired(errors, "teacher_id", form.teacher_id, "Guru");
-  validateRequired(errors, "class_id", form.class_id, "Kelas");
-  validateRequired(errors, "school_year_id", form.school_year_id, "Tahun ajaran");
-  validateRequired(errors, "is_active", String(form.is_active), "Status assignment");
-  return errors;
-}
-
-function getInitials(name: string) {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) {
-    return "G";
-  }
-  if (words.length === 1) {
-    return words[0].slice(0, 1).toUpperCase();
-  }
-  return `${words[0][0] ?? ""}${words[1][0] ?? ""}`.toUpperCase();
 }
