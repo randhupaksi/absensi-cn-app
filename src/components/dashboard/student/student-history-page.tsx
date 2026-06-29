@@ -12,6 +12,7 @@ import {
   StudentSubmissionPill,
 } from "@/components/dashboard/student/student-common";
 import { RadixSelectField } from "@/components/ui/radix-select";
+import { openProtectedApiAsset } from "@/components/security/protected-api-asset";
 import { getStudentHistory } from "@/services/student.service";
 import type { StaffAttendanceRecord } from "@/types/staff";
 import type { StudentSubmission } from "@/types/student";
@@ -242,15 +243,14 @@ function AttendanceRow({ record }: { record: StaffAttendanceRecord }) {
       </div>
       <div className="flex justify-center">
         {record.photo_url ? (
-          <a
-            href={studentAttachmentUrl(record.photo_url)}
-            target="_blank"
-            rel="noreferrer"
+          <button
+            type="button"
+            onClick={() => void openProtectedApiAsset(record.photo_url!)}
             className="inline-flex size-10 items-center justify-center rounded-full border border-emerald-200 bg-white text-emerald-700 transition hover:bg-emerald-50"
             aria-label="Buka bukti absensi"
           >
             <FileImage className="size-4.5" />
-          </a>
+          </button>
         ) : (
           <span className="text-slate-300">-</span>
         )}

@@ -8,11 +8,11 @@ import {
   formatStudentDate,
   formatStudentDateTime,
   formatStudentTime,
-  studentAttachmentUrl,
   StudentStatusPill,
   StudentSubmissionPill,
 } from "@/components/dashboard/student/student-common";
 import { Button } from "@/components/ui/button";
+import { openProtectedApiAsset } from "@/components/security/protected-api-asset";
 import {
   PremiumModal,
   premiumModalActionsClassName,
@@ -359,15 +359,14 @@ export function StudentDashboardPage() {
                       <div className="flex items-center gap-2">
                         <StudentStatusPill status={record.status} />
                         {record.photo_url ? (
-                          <a
-                            href={studentAttachmentUrl(record.photo_url)}
-                            target="_blank"
-                            rel="noreferrer"
+                          <button
+                            type="button"
+                            onClick={() => void openProtectedApiAsset(record.photo_url!)}
                             className="inline-flex size-9 items-center justify-center rounded-full border border-emerald-200 bg-white text-emerald-700 transition hover:bg-emerald-50"
                             aria-label="Buka foto absensi"
                           >
                             <FileImage className="size-4" />
-                          </a>
+                          </button>
                         ) : null}
                       </div>
                     </div>

@@ -9,10 +9,10 @@ import {
   premiumModalLabelClassName,
 } from "@/components/modals/premium-modal";
 import { Button } from "@/components/ui/button";
+import { ProtectedApiImage } from "@/components/security/protected-api-asset";
 import { FieldError } from "@/components/ui/field-error";
 import { RadixSelectField } from "@/components/ui/radix-select";
 import { Textarea } from "@/components/ui/textarea";
-import { resolveApiAssetUrl } from "@/lib/config/site";
 import { type FieldErrors, hasFieldErrors, validateRequired } from "@/lib/form-validation";
 import { formatDisplayLabel } from "@/lib/utils";
 import type { StaffAttendanceRecord, StaffAttendanceReviewPayload } from "@/types/staff";
@@ -67,10 +67,6 @@ export function AttendanceStatusPill({ status }: { status: string }) {
       {formatDisplayLabel(status)}
     </span>
   );
-}
-
-function normalizeAttendanceProofUrl(photoUrl?: string) {
-  return resolveApiAssetUrl(photoUrl);
 }
 
 export function AttendanceReviewModal({
@@ -190,7 +186,7 @@ export function AttendanceProofModal({
   record: StaffAttendanceRecord | null;
   onOpenChange: (open: boolean) => void;
 }) {
-  const photoUrl = normalizeAttendanceProofUrl(record?.photo_url);
+  const photoUrl = record?.photo_url;
 
   return (
     <PremiumModal
@@ -220,8 +216,7 @@ export function AttendanceProofModal({
 
           <div className="overflow-hidden rounded-[26px] border border-emerald-100/80 bg-[linear-gradient(180deg,#f8fffb_0%,#eefbf4_100%)] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)]">
             {photoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <ProtectedApiImage
                 src={photoUrl}
                 alt={`Bukti absensi ${record.student_name}`}
                 className="max-h-[62vh] w-full rounded-[20px] object-contain"
