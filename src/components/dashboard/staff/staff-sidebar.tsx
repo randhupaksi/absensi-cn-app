@@ -6,6 +6,7 @@ import {
   BookOpenCheck,
   ClipboardList,
   Building2,
+  ChartColumnBig,
   FileClock,
   GraduationCap,
   History,
@@ -149,6 +150,34 @@ export const walasSidebarItems = [
     icon: FileClock,
   },
 ] satisfies StaffSidebarItem[];
+
+export const guruMapelSidebarItems = [
+  { label: "Daftar Hadir", href: "/dashboard/walas/mapel", icon: BookOpenCheck },
+  { label: "Riwayat Sesi", href: "/dashboard/walas/mapel/history", icon: History },
+  { label: "Rekap Mapel", href: "/dashboard/walas/mapel/recap", icon: ChartColumnBig },
+] satisfies StaffSidebarItem[];
+
+export function buildWalasSidebarItems(opts: {
+  isHomeroomTeacher: boolean;
+  hasSubjectAssignments: boolean;
+}): StaffSidebarItem[] {
+  const items: StaffSidebarItem[] = [];
+  if (opts.isHomeroomTeacher) {
+    items.push(
+      { label: "Dashboard", href: "/dashboard/walas", icon: LayoutDashboard },
+      { label: "Siswa Kelas", href: "/dashboard/walas/students", icon: Users },
+      { label: "Absensi Kelas", href: "/dashboard/walas/attendance", icon: ClipboardList },
+      { label: "Pengajuan", href: "/dashboard/walas/submissions", icon: FileClock },
+    );
+  }
+  if (opts.hasSubjectAssignments) {
+    items.push(...guruMapelSidebarItems);
+  }
+  if (items.length === 0) {
+    items.push({ label: "Dashboard", href: "/dashboard/walas", icon: LayoutDashboard });
+  }
+  return items;
+}
 
 export const bkSidebarItems = [
   { label: "Dashboard", href: "/dashboard/bk", icon: LayoutDashboard },

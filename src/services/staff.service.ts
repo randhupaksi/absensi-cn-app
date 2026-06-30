@@ -15,6 +15,15 @@ import type {
   StaffHomeroomStudentDetail,
   StaffSubmission,
   StaffStudentSummary,
+  StaffTeacherMe,
+  StaffSubjectAssignment,
+  StaffSubjectCurrentSession,
+  StaffSubjectAttendanceOverview,
+  StaffSubjectAttendanceRecord,
+  StaffSubjectValidationPayload,
+  StaffSubjectOverridePayload,
+  StaffSubjectRecap,
+  StaffSubjectSessionList,
 } from "@/types/staff";
 import axios from "axios";
 
@@ -308,6 +317,109 @@ export async function reviewBKSubmission(
     const response = await apiClient.patch<ApiEnvelope<StaffSubmission>>(
       `/bk/submissions/${submissionId}/review`,
       payload,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+// ─── Guru Mapel Services ─────────────────────────────────────────────────────
+
+export async function getTeacherMe() {
+  try {
+    const response = await apiClient.get<ApiEnvelope<StaffTeacherMe>>("/teacher/me");
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function getTeacherSubjectAssignments() {
+  try {
+    const response = await apiClient.get<ApiEnvelope<StaffSubjectAssignment[]>>(
+      "/teacher/subject-assignments",
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function getTeacherSubjectCurrentSession(hari: string, jam: string) {
+  try {
+    const response = await apiClient.get<ApiEnvelope<StaffSubjectCurrentSession | null>>(
+      "/teacher/subject/current-session",
+      { params: { hari, jam } },
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function getTeacherSubjectAttendance(sessionId: string) {
+  try {
+    const response = await apiClient.get<ApiEnvelope<StaffSubjectAttendanceOverview>>(
+      "/teacher/subject/attendance",
+      { params: { session_id: sessionId } },
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function submitTeacherSubjectValidation(payload: StaffSubjectValidationPayload) {
+  try {
+    const response = await apiClient.post<ApiEnvelope<StaffSubjectCurrentSession>>(
+      "/teacher/subject/attendance/validate",
+      payload,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function overrideTeacherSubjectAttendance(payload: StaffSubjectOverridePayload) {
+  try {
+    const response = await apiClient.put<ApiEnvelope<StaffSubjectAttendanceRecord>>(
+      "/teacher/subject/attendance/override",
+      payload,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function getTeacherSubjectSessions(params: {
+  assignment_id: string;
+  status?: string;
+  date_from?: string;
+  date_to?: string;
+}) {
+  try {
+    const response = await apiClient.get<ApiEnvelope<StaffSubjectSessionList>>(
+      "/teacher/subject/sessions",
+      { params },
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function getTeacherSubjectRecap(params: {
+  assignment_id: string;
+  date_from?: string;
+  date_to?: string;
+}) {
+  try {
+    const response = await apiClient.get<ApiEnvelope<StaffSubjectRecap>>(
+      "/teacher/subject/recap",
+      { params },
     );
     return response.data.data;
   } catch (error) {

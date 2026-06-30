@@ -4,8 +4,7 @@ import dynamic from "next/dynamic";
 import { AttendanceDonutChart } from "@/components/dashboard/admin/charts/attendance-donut-chart";
 import { EmptyState } from "@/components/dashboard/admin/widgets/empty-state";
 import { KpiCard } from "@/components/dashboard/admin/widgets/kpi-card";
-import { StaffShell } from "@/components/dashboard/staff/staff-shell";
-import { walasSidebarItems } from "@/components/dashboard/staff/staff-sidebar";
+import { WalasShell } from "@/components/dashboard/staff/walas-shell";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -223,12 +222,7 @@ export function WalasAttendancePage() {
   }, [records, statusFilter]);
 
   return (
-    <StaffShell
-      expectedRole="walas"
-      sidebarItems={walasSidebarItems}
-      userLabel="Wali Kelas"
-      resolveTitle={getWalasAttendanceSectionTitle}
-    >
+    <WalasShell>
       {() => (
         <>
           <section className="relative overflow-hidden rounded-[30px] border border-white/75 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(250,253,252,0.94)_52%,rgba(245,252,249,0.96)_100%)] px-4 pt-4 pb-3 shadow-[0_28px_80px_rgba(28,77,61,0.1)] backdrop-blur-xl sm:px-5 sm:pt-5 sm:pb-4 lg:px-6 lg:pt-6 lg:pb-5">
@@ -682,7 +676,7 @@ export function WalasAttendancePage() {
           />
         </>
       )}
-    </StaffShell>
+    </WalasShell>
   );
 }
 

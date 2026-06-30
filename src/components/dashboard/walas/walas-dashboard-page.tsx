@@ -3,8 +3,7 @@
 import { EmptyState } from "@/components/dashboard/admin/widgets/empty-state";
 import { KpiCard } from "@/components/dashboard/admin/widgets/kpi-card";
 import { AttendanceDonutChart } from "@/components/dashboard/admin/charts/attendance-donut-chart";
-import { StaffShell } from "@/components/dashboard/staff/staff-shell";
-import { walasSidebarItems } from "@/components/dashboard/staff/staff-sidebar";
+import { WalasShell } from "@/components/dashboard/staff/walas-shell";
 import { getTeacherHomeroomDashboard } from "@/services/staff.service";
 import type { StaffHomeroomDashboard, StaffRiskStudentRecord } from "@/types/staff";
 import { useQuery } from "@tanstack/react-query";
@@ -105,12 +104,7 @@ export function WalasDashboardPage() {
   ].slice(0, 6);
 
   return (
-    <StaffShell
-      expectedRole="walas"
-      sidebarItems={walasSidebarItems}
-      userLabel="Wali Kelas"
-      resolveTitle={getWalasSectionTitle}
-    >
+    <WalasShell>
       {(session) => (
         <>
           <section className="grid gap-5 xl:grid-cols-[1.25fr_0.75fr]">
@@ -165,7 +159,7 @@ export function WalasDashboardPage() {
           </section>
         </>
       )}
-    </StaffShell>
+    </WalasShell>
   );
 }
 

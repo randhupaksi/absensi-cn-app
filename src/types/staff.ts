@@ -229,3 +229,123 @@ export type StaffBKSubmissionOverview = {
   records: StaffSubmission[];
   classes: StaffBKClassSummary[];
 };
+
+// ─── Guru Mapel Types ───────────────────────────────────────────────────────
+
+export type StaffTeacherMe = {
+  user_id: string;
+  teacher_id: string;
+  name: string;
+  username?: string;
+  nip?: string;
+  is_homeroom_teacher: boolean;
+  has_subject_assignments: boolean;
+  active_homeroom?: StaffHomeroomContext;
+};
+
+export type StaffSubjectSchedule = {
+  id: string;
+  hari: string;
+  jam_mulai: string;
+  jam_selesai: string;
+};
+
+export type StaffSubjectAssignment = {
+  id: string;
+  subject_id: string;
+  subject_code: string;
+  subject_name: string;
+  class_id: string;
+  class_name: string;
+  school_year_id: string;
+  school_year_name: string;
+  is_active: boolean;
+  schedules: StaffSubjectSchedule[];
+};
+
+export type StaffSubjectCurrentSession = {
+  session_id: string;
+  assignment: StaffSubjectAssignment;
+  schedule_id: string;
+  hari: string;
+  jam_mulai: string;
+  jam_selesai: string;
+  tanggal: string;
+  status: string;
+  divalidasi_oleh?: string;
+  divalidasi_at?: string;
+};
+
+export type StaffSubjectAttendanceRecord = {
+  student_id: string;
+  student_name: string;
+  nis: string;
+  status_pagi: string;
+  status_mapel: string;
+  keterangan?: string;
+  foto_url?: string;
+  is_editable: boolean;
+  is_edited: boolean;
+  override_id?: string;
+  alasan_edit?: string;
+};
+
+export type StaffSubjectAttendanceOverview = {
+  session: StaffSubjectCurrentSession;
+  records: StaffSubjectAttendanceRecord[];
+};
+
+export type StaffSubjectValidationPayload = {
+  session_id: string;
+  overrides: {
+    student_id: string;
+    status: string;
+    keterangan: string;
+    foto_url: string;
+  }[];
+};
+
+export type StaffSubjectOverridePayload = {
+  session_id: string;
+  student_id: string;
+  status: string;
+  keterangan: string;
+  foto_url: string;
+  alasan_koreksi: string;
+};
+
+export type StaffSubjectRecapStudentRow = {
+  student_id: string;
+  student_name: string;
+  nis: string;
+  hadir: number;
+  telat: number;
+  alfa_kelas: number;
+  dispensasi: number;
+  alfa: number;
+  sakit: number;
+  izin: number;
+};
+
+export type StaffSubjectRecap = {
+  assignment: StaffSubjectAssignment;
+  total_pertemuan: number;
+  students: StaffSubjectRecapStudentRow[];
+};
+
+export type StaffSubjectSessionListItem = {
+  session_id: string;
+  schedule_id: string;
+  hari: string;
+  jam_mulai: string;
+  jam_selesai: string;
+  tanggal: string;
+  status: string;
+  divalidasi_oleh?: string;
+  divalidasi_at?: string;
+};
+
+export type StaffSubjectSessionList = {
+  assignment: StaffSubjectAssignment;
+  sessions: StaffSubjectSessionListItem[];
+};

@@ -9,11 +9,12 @@ import type {
   AdminClass,
   AdminSchoolYear,
   AdminSubject,
+  AdminSubjectScheduleInput,
   AdminTeacherProfile,
   AdminTeacherSubjectAssignment,
   AdminTeacherSubjectAssignmentPayload,
 } from "@/types/admin";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 export function validateTeacherSubjectAssignmentForm(
@@ -33,13 +34,25 @@ const ACTIVE_OPTIONS = [
   { value: "false", label: "Nonaktif" },
 ];
 
+const HARI_OPTIONS = [
+  { value: "senin", label: "Senin" },
+  { value: "selasa", label: "Selasa" },
+  { value: "rabu", label: "Rabu" },
+  { value: "kamis", label: "Kamis" },
+  { value: "jumat", label: "Jumat" },
+  { value: "sabtu", label: "Sabtu" },
+];
+
 const EMPTY_FORM: AdminTeacherSubjectAssignmentPayload = {
   teacher_id: "",
   subject_id: "",
   class_id: "",
   school_year_id: "",
   is_active: true,
+  schedules: [],
 };
+
+const EMPTY_SCHEDULE: AdminSubjectScheduleInput = { hari: "senin", jam_mulai: "", jam_selesai: "" };
 
 type SharedProps = {
   teacherProfiles: AdminTeacherProfile[];
@@ -49,6 +62,70 @@ type SharedProps = {
   isPending: boolean;
   onSubmit: (payload: AdminTeacherSubjectAssignmentPayload) => void;
 };
+
+function ScheduleRows({
+  rows,
+  onChange,
+}: {
+  rows: AdminSubjectScheduleInput[];
+  onChange: (rows: AdminSubjectScheduleInput[]) => void;
+}) {
+  const add = () => onChange([...rows, { ...EMPTY_SCHEDULE }]);
+  const remove = (i: number) => onChange(rows.filter((_, idx) => idx !== i));
+  const update = (i: number, field: keyof AdminSubjectScheduleInput, value: string) =>
+    onChange(rows.map((r, idx) => (idx === i ? { ...r, [field]: value } : r)));
+
+  return (
+    <FieldGroup label="Jadwal Mengajar">
+      <div className="space-y-2">
+        {rows.map((row, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <select
+              value={row.hari}
+              onChange={(e) => update(i, "hari", e.target.value)}
+              className="w-28 shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-sm text-slate-900 focus:border-emerald-400 focus:outline-none"
+            >
+              {HARI_OPTIONS.map((h) => (
+                <option key={h.value} value={h.value}>{h.label}</option>
+              ))}
+            </select>
+            <input
+              type="time"
+              value={row.jam_mulai}
+              onChange={(e) => update(i, "jam_mulai", e.target.value)}
+              className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-sm text-slate-900 focus:border-emerald-400 focus:outline-none"
+              placeholder="Mulai"
+            />
+            <span className="text-xs text-slate-400">–</span>
+            <input
+              type="time"
+              value={row.jam_selesai}
+              onChange={(e) => update(i, "jam_selesai", e.target.value)}
+              className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-sm text-slate-900 focus:border-emerald-400 focus:outline-none"
+              placeholder="Selesai"
+            />
+            <button
+              type="button"
+              onClick={() => remove(i)}
+              className="flex size-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500"
+            >
+              <Trash2 className="size-4" />
+            </button>
+          </div>
+        ))}
+
+        <button
+          type="button"
+          onClick={add}
+          className="flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-xs font-medium text-slate-500 transition hover:border-emerald-400 hover:text-emerald-600"
+        >
+          <Plus className="size-3.5" />
+          Tambah Jadwal
+        </button>
+      </div>
+    </FieldGroup>
+  );
+}
 
 export function TeacherSubjectAssignmentCreateModal({
   open,
@@ -119,6 +196,11 @@ export function TeacherSubjectAssignmentCreateModal({
           <FieldError message={errors.is_active} />
         </FieldGroup>
 
+        <ScheduleRows
+          rows={form.schedules ?? []}
+          onChange={(rows) => set("schedules", rows)}
+        />
+
         <ModalActions isPending={isPending} onCancel={() => handleOpenChange(false)} onSubmit={handleSubmit} submitLabel="Simpan Assignment Mapel" />
       </div>
     </PremiumModal>
@@ -144,6 +226,11 @@ export function TeacherSubjectAssignmentEditModal({
           class_id: assignment.class_id,
           school_year_id: assignment.school_year_id,
           is_active: assignment.is_active,
+          schedules: assignment.schedules?.map(({ hari, jam_mulai, jam_selesai }) => ({
+            hari,
+            jam_mulai,
+            jam_selesai,
+          })) ?? [],
         }
       : EMPTY_FORM,
   );
@@ -192,6 +279,11 @@ export function TeacherSubjectAssignmentEditModal({
           <RadixSelectField value={String(form.is_active)} onValueChange={(v) => set("is_active", v === "true")} placeholder="Pilih status" options={ACTIVE_OPTIONS} />
           <FieldError message={errors.is_active} />
         </FieldGroup>
+
+        <ScheduleRows
+          rows={form.schedules ?? []}
+          onChange={(rows) => set("schedules", rows)}
+        />
 
         <ModalActions isPending={isPending} onCancel={() => onOpenChange(false)} onSubmit={handleSubmit} submitLabel="Update Assignment Mapel" />
       </div>

@@ -83,6 +83,19 @@ export type AdminTeacherProfilePayload = {
   is_active: boolean;
 };
 
+export type AdminSubjectSchedule = {
+  id: string;
+  hari: string;
+  jam_mulai: string;
+  jam_selesai: string;
+};
+
+export type AdminSubjectScheduleInput = {
+  hari: string;
+  jam_mulai: string;
+  jam_selesai: string;
+};
+
 export type AdminTeacherSubjectAssignment = {
   id: string;
   teacher_id: string;
@@ -95,6 +108,7 @@ export type AdminTeacherSubjectAssignment = {
   school_year_id: string;
   school_year_name: string;
   is_active: boolean;
+  schedules: AdminSubjectSchedule[];
 };
 
 export type AdminTeacherSubjectAssignmentPayload = {
@@ -103,6 +117,7 @@ export type AdminTeacherSubjectAssignmentPayload = {
   class_id: string;
   school_year_id: string;
   is_active: boolean;
+  schedules?: AdminSubjectScheduleInput[];
 };
 
 export type AdminHomeroomAssignment = {
