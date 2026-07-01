@@ -655,7 +655,7 @@ export function WalasAttendancePage() {
           </article>
 
           <AttendanceReviewModal
-            key={reviewTarget?.id ?? "closed"}
+            key={reviewTarget?.id ?? "attendance-review-closed"}
             record={reviewTarget}
             onOpenChange={(open) => {
               if (!open) setReviewTarget(null);

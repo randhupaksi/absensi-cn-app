@@ -130,10 +130,11 @@ export function StaffSidebar({
 export const adminSidebarItems = [
   { label: "Dashboard", href: "/dashboard/admin", icon: LayoutDashboard },
   { label: "Guru", href: "/dashboard/admin/teachers", icon: GraduationCap },
+  { label: "Manajemen Mapel", href: "/dashboard/admin/subjects", icon: BookOpenCheck },
   { label: "Siswa", href: "/dashboard/admin/students", icon: Users },
   { label: "Kelas", href: "/dashboard/admin/classes", icon: Building2 },
   { label: "Admin", href: "/dashboard/admin/admins", icon: ShieldCheck },
-  { label: "Role Management", href: "/dashboard/admin/users", icon: UserCog },
+  { label: "Manajemen Role", href: "/dashboard/admin/users", icon: UserCog },
 ] satisfies StaffSidebarItem[];
 
 export const walasSidebarItems = [

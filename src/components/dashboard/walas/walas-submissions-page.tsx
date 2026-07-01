@@ -405,7 +405,7 @@ export function WalasSubmissionsPage() {
           />
 
           <SubmissionReviewModal
-            key={reviewTarget?.id ?? "closed"}
+            key={reviewTarget?.id ?? "submission-review-closed"}
             submission={reviewTarget}
             onOpenChange={(open) => {
               if (!open) {

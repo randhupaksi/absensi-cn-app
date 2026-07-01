@@ -144,6 +144,45 @@ export type AdminSubject = {
   name: string;
   group?: string;
   is_active: boolean;
+  assignment_count: number;
+  teacher_count: number;
+  class_count: number;
+  schedule_count: number;
+};
+
+export type AdminSubjectPayload = {
+  code: string;
+  name: string;
+  group: string;
+  is_active: boolean;
+};
+
+export type AdminSubjectScheduleOverview = {
+  id: string;
+  assignment_id: string;
+  teacher_id: string;
+  teacher_name: string;
+  subject_id: string;
+  subject_code: string;
+  subject_name: string;
+  class_id: string;
+  class_name: string;
+  school_year_id: string;
+  school_year_name: string;
+  hari: string;
+  jam_mulai: string;
+  jam_selesai: string;
+  is_active: boolean;
+};
+
+export type AdminSubjectScheduleFilters = {
+  query?: string;
+  teacher_id?: string;
+  subject_id?: string;
+  class_id?: string;
+  school_year_id?: string;
+  day?: string;
+  status?: string;
 };
 
 export type AdminSchoolYear = {

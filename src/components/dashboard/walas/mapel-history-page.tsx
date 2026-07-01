@@ -2,10 +2,16 @@
 
 import { EmptyState } from "@/components/dashboard/admin/widgets/empty-state";
 import { WalasShell } from "@/components/dashboard/staff/walas-shell";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { RadixSelectField } from "@/components/ui/radix-select";
 import { getTeacherSubjectAssignments, getTeacherSubjectSessions } from "@/services/staff.service";
 import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { id as localeID } from "date-fns/locale";
 import { motion } from "motion/react";
-import { BookOpenCheck, History, Loader2 } from "lucide-react";
+import { BookOpenCheck, CalendarDays, History, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -21,14 +27,24 @@ const HARI_LABEL: Record<string, string> = {
   jumat: "Jumat", sabtu: "Sabtu", minggu: "Minggu",
 };
 
+const STATUS_OPTIONS = [
+  { value: "all", label: "Semua status" },
+  { value: "belum_divalidasi", label: "Belum Divalidasi" },
+  { value: "sudah_divalidasi", label: "Sudah Divalidasi" },
+  { value: "diedit", label: "Diedit" },
+];
+
 export function MapelHistoryPage() {
   const searchParams = useSearchParams();
   const defaultAssignment = searchParams.get("assignment_id") ?? "";
 
   const [selectedAssignmentId, setSelectedAssignmentId] = useState(defaultAssignment);
-  const [statusFilter, setStatusFilter] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
+
+  const dateFromStr = dateFrom ? format(dateFrom, "yyyy-MM-dd") : "";
+  const dateToStr = dateTo ? format(dateTo, "yyyy-MM-dd") : "";
 
   const assignmentsQuery = useQuery({
     queryKey: ["teacher-subject-assignments"],
@@ -37,13 +53,13 @@ export function MapelHistoryPage() {
   });
 
   const sessionsQuery = useQuery({
-    queryKey: ["subject-sessions", selectedAssignmentId, statusFilter, dateFrom, dateTo],
+    queryKey: ["subject-sessions", selectedAssignmentId, statusFilter, dateFromStr, dateToStr],
     queryFn: () =>
       getTeacherSubjectSessions({
         assignment_id: selectedAssignmentId,
-        status: statusFilter || undefined,
-        date_from: dateFrom || undefined,
-        date_to: dateTo || undefined,
+        status: statusFilter !== "all" ? statusFilter : undefined,
+        date_from: dateFromStr || undefined,
+        date_to: dateToStr || undefined,
       }),
     enabled: !!selectedAssignmentId,
     staleTime: 30_000,
@@ -51,6 +67,11 @@ export function MapelHistoryPage() {
 
   const assignments = assignmentsQuery.data ?? [];
   const sessions = sessionsQuery.data?.sessions ?? [];
+
+  const assignmentOptions = assignments.map((a) => ({
+    value: a.id,
+    label: `${a.subject_name} — ${a.class_name}`,
+  }));
 
   return (
     <WalasShell>
@@ -62,51 +83,39 @@ export function MapelHistoryPage() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div className="sm:col-span-2">
                 <label className="mb-1.5 block text-xs font-semibold text-slate-600">Mata Pelajaran</label>
-                <select
+                <RadixSelectField
                   value={selectedAssignmentId}
-                  onChange={(e) => setSelectedAssignmentId(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-                >
-                  <option value="">-- Pilih mata pelajaran --</option>
-                  {assignments.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.subject_name} — {a.class_name}
-                    </option>
-                  ))}
-                </select>
+                  onValueChange={setSelectedAssignmentId}
+                  placeholder="Pilih mata pelajaran"
+                  options={assignmentOptions}
+                />
               </div>
 
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-slate-600">Status</label>
-                <select
+                <RadixSelectField
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-                >
-                  <option value="">Semua status</option>
-                  <option value="belum_divalidasi">Belum Divalidasi</option>
-                  <option value="sudah_divalidasi">Sudah Divalidasi</option>
-                  <option value="diedit">Diedit</option>
-                </select>
+                  onValueChange={setStatusFilter}
+                  placeholder="Semua status"
+                  options={STATUS_OPTIONS}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="mb-1.5 block text-xs font-semibold text-slate-600">Dari</label>
-                  <input
-                    type="date"
+                  <DatePickerButton
                     value={dateFrom}
-                    onChange={(e) => setDateFrom(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+                    onChange={setDateFrom}
+                    placeholder="Dari"
                   />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-semibold text-slate-600">Sampai</label>
-                  <input
-                    type="date"
+                  <DatePickerButton
                     value={dateTo}
-                    onChange={(e) => setDateTo(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+                    onChange={setDateTo}
+                    placeholder="Sampai"
                   />
                 </div>
               </div>
@@ -185,5 +194,44 @@ export function MapelHistoryPage() {
         </>
       )}
     </WalasShell>
+  );
+}
+
+function DatePickerButton({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: Date | undefined;
+  onChange: (date: Date | undefined) => void;
+  placeholder: string;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        render={<Button type="button" variant="outline" />}
+        className="h-14 w-full justify-start rounded-[1.25rem] border-slate-300/80 bg-[linear-gradient(180deg,#ffffff_0%,#f5fbf7_100%)] px-3 text-left shadow-[0_14px_30px_rgba(15,23,42,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] transition-[border-color,box-shadow,background-color] hover:border-emerald-400 hover:shadow-[0_0_0_3px_rgba(16,185,129,0.16),0_14px_30px_rgba(15,23,42,0.05)]"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <CalendarDays className="size-4 shrink-0 text-emerald-600" />
+          <span className={`truncate text-sm font-medium ${value ? "text-slate-700" : "text-slate-400"}`}>
+            {value ? format(value, "d MMM yy", { locale: localeID }) : placeholder}
+          </span>
+        </div>
+      </PopoverTrigger>
+      <PopoverContent
+        sideOffset={8}
+        className="w-auto rounded-[24px] border border-emerald-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f4fbf7_100%)] p-4 shadow-[0_24px_54px_rgba(15,23,42,0.12)]"
+      >
+        <Calendar
+          mode="single"
+          selected={value}
+          onSelect={(date) => { onChange(date); setOpen(false); }}
+          locale={localeID}
+          buttonVariant="ghost"
+        />
+      </PopoverContent>
+    </Popover>
   );
 }

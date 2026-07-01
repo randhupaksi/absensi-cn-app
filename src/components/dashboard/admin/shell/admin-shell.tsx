@@ -38,6 +38,9 @@ function getAdminSectionTitle(pathname: string) {
   if (pathname.startsWith("/dashboard/admin/teachers")) {
     return "Teacher Management Dashboard";
   }
+  if (pathname.startsWith("/dashboard/admin/subjects")) {
+    return "Manajemen Mapel";
+  }
   if (pathname.startsWith("/dashboard/admin/students")) {
     return "Student Management Dashboard";
   }

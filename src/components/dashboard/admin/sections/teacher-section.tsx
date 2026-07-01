@@ -16,7 +16,6 @@ import {
   TeacherProfileEditModal,
   type TeacherProfileCreatePayload,
 } from "@/components/dashboard/admin/sections/teacher-profile-modals";
-import { TeacherSubjectAssignmentCreateModal, TeacherSubjectAssignmentEditModal } from "@/components/dashboard/admin/sections/teacher-subject-modals";
 import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
 import { Button } from "@/components/ui/button";
 import { RadixSelectField } from "@/components/ui/radix-select";
@@ -24,17 +23,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   createAdminHomeroomAssignment,
   createAdminTeacherProfile,
-  createAdminTeacherSubjectAssignment,
   createAdminUser,
   deleteAdminHomeroomAssignment,
-  deleteAdminTeacherSubjectAssignment,
   deleteAdminUser,
   getAdminClasses,
   getAdminSchoolYears,
-  getAdminSubjects,
   updateAdminHomeroomAssignment,
   updateAdminTeacherProfile,
-  updateAdminTeacherSubjectAssignment,
   updateAdminUser,
 } from "@/services/admin.service";
 import type {
@@ -42,7 +37,6 @@ import type {
   AdminHomeroomAssignmentPayload,
   AdminTeacherProfile,
   AdminTeacherSubjectAssignment,
-  AdminTeacherSubjectAssignmentPayload,
 } from "@/types/admin";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -86,11 +80,10 @@ const profileStatusOptions = [
   { value: "Nonaktif", label: "Nonaktif" },
 ];
 
-type TeacherTab = "profiles" | "subjects" | "homerooms";
+type TeacherTab = "profiles" | "homerooms";
 
 type TeacherDeleteTarget =
   | { type: "profile"; item: AdminTeacherProfile }
-  | { type: "subject"; item: AdminTeacherSubjectAssignment }
   | { type: "homeroom"; item: AdminHomeroomAssignment };
 
 export function TeacherSection({
@@ -108,19 +101,12 @@ export function TeacherSection({
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [subjectModalOpen, setSubjectModalOpen] = useState(false);
   const [homeroomModalOpen, setHomeroomModalOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<AdminTeacherProfile | null>(null);
-  const [editingSubjectAssignment, setEditingSubjectAssignment] =
-    useState<AdminTeacherSubjectAssignment | null>(null);
   const [editingHomeroomAssignment, setEditingHomeroomAssignment] =
     useState<AdminHomeroomAssignment | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<TeacherDeleteTarget | null>(null);
 
-  const subjectsQuery = useQuery({
-    queryKey: ["admin-subjects"],
-    queryFn: getAdminSubjects,
-  });
   const classesQuery = useQuery({
     queryKey: ["admin-classes"],
     queryFn: getAdminClasses,
@@ -155,20 +141,6 @@ export function TeacherSection({
       void queryClient.invalidateQueries({ queryKey: ["admin-teacher-profiles"] });
       void queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       setProfileModalOpen(false);
-    },
-    onError: (error: Error) => {
-      toast.error(error.message);
-    },
-  });
-
-  const createTeacherSubjectAssignmentMutation = useMutation({
-    mutationFn: createAdminTeacherSubjectAssignment,
-    onSuccess: () => {
-      toast.success("Assignment mapel berhasil dibuat.");
-      void queryClient.invalidateQueries({
-        queryKey: ["admin-teacher-subject-assignments"],
-      });
-      setSubjectModalOpen(false);
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -234,36 +206,6 @@ export function TeacherSection({
       });
       void queryClient.invalidateQueries({
         queryKey: ["admin-homeroom-assignments"],
-      });
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
-
-  const updateTeacherSubjectAssignmentMutation = useMutation({
-    mutationFn: ({
-      id,
-      payload,
-    }: {
-      id: string;
-      payload: AdminTeacherSubjectAssignmentPayload;
-    }) => updateAdminTeacherSubjectAssignment(id, payload),
-    onSuccess: () => {
-      toast.success("Assignment mapel berhasil diperbarui.");
-      void queryClient.invalidateQueries({
-        queryKey: ["admin-teacher-subject-assignments"],
-      });
-      setEditingSubjectAssignment(null);
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
-
-  const deleteTeacherSubjectAssignmentMutation = useMutation({
-    mutationFn: deleteAdminTeacherSubjectAssignment,
-    onSuccess: () => {
-      toast.success("Assignment mapel berhasil dihapus.");
-      setDeleteTarget(null);
-      void queryClient.invalidateQueries({
-        queryKey: ["admin-teacher-subject-assignments"],
       });
     },
     onError: (error: Error) => toast.error(error.message),
@@ -342,20 +284,6 @@ export function TeacherSection({
     [teacherProfiles, statusFilter, normalizedQuery],
   );
 
-  const filteredTeacherSubjectAssignments = useMemo(
-    () =>
-      teacherSubjectAssignments.filter(
-        (assignment) =>
-          normalizedQuery.length === 0 ||
-          assignment.teacher_name.toLowerCase().includes(normalizedQuery) ||
-          assignment.subject_code.toLowerCase().includes(normalizedQuery) ||
-          assignment.subject_name.toLowerCase().includes(normalizedQuery) ||
-          assignment.class_name.toLowerCase().includes(normalizedQuery) ||
-          assignment.school_year_name.toLowerCase().includes(normalizedQuery),
-      ),
-    [teacherSubjectAssignments, normalizedQuery],
-  );
-
   const filteredHomeroomAssignments = useMemo(
     () =>
       homeroomAssignments.filter(
@@ -371,47 +299,12 @@ export function TeacherSection({
   const activeTeacherCount = teacherProfiles.filter(
     (teacher) => teacher.is_active,
   ).length;
-  const totalSubjectAssignments = teacherSubjectAssignments.length;
   const totalHomeroomAssignments = homeroomAssignments.length;
-  const activeSubjectAssignments = teacherSubjectAssignments.filter(
-    (assignment) => assignment.is_active,
-  ).length;
   const activeHomeroomAssignments = homeroomAssignments.filter(
     (assignment) => assignment.is_active,
   ).length;
 
   const kpiCards = useMemo(() => {
-    if (activeTab === "subjects") {
-      return [
-        {
-          label: "Total Assignment",
-          value: totalSubjectAssignments,
-          icon: BookOpen,
-          accentClass: "from-sky-500 via-cyan-500 to-emerald-500",
-        },
-        {
-          label: "Assignment Aktif",
-          value: activeSubjectAssignments,
-          icon: BadgeCheck,
-          accentClass: "from-emerald-500 via-teal-500 to-green-500",
-        },
-        {
-          label: "Guru Terlibat",
-          value: new Set(teacherSubjectAssignments.map((assignment) => assignment.teacher_id))
-            .size,
-          icon: UsersRound,
-          accentClass: "from-teal-500 via-emerald-500 to-lime-500",
-        },
-        {
-          label: "Kelas Terlayani",
-          value: new Set(teacherSubjectAssignments.map((assignment) => assignment.class_id))
-            .size,
-          icon: GraduationCap,
-          accentClass: "from-amber-400 via-orange-400 to-emerald-500",
-        },
-      ];
-    }
-
     if (activeTab === "homerooms") {
       return [
         {
@@ -469,24 +362,17 @@ export function TeacherSection({
     ];
   }, [
     activeHomeroomAssignments,
-    activeSubjectAssignments,
     activeTab,
     activeTeacherCount,
     homeroomAssignments,
     teacherProfiles,
-    teacherSubjectAssignments,
     totalHomeroomAssignments,
-    totalSubjectAssignments,
   ]);
 
   const addActionConfig = {
     profiles: {
       label: "Tambah",
       onClick: () => setProfileModalOpen(true),
-    },
-    subjects: {
-      label: "Tambah",
-      onClick: () => setSubjectModalOpen(true),
     },
     homerooms: {
       label: "Tambah",
@@ -521,8 +407,9 @@ export function TeacherSection({
                   Teacher Management
                 </h2>
                 <p className="max-w-2xl text-[15px] leading-7 text-slate-600 sm:text-base">
-                  Profil guru, assignment mapel, dan penugasan wali kelas dari API admin
-                  dengan tampilan kerja yang lebih rapi untuk operasional harian.
+                  Profil guru dan penugasan wali kelas dengan tampilan kerja yang
+                  lebih rapi untuk operasional harian. Jadwal mengajar dikelola
+                  terpusat melalui Manajemen Mapel.
                 </p>
               </div>
             </div>
@@ -628,20 +515,13 @@ export function TeacherSection({
           className="mt-5 gap-4"
         >
           <ScrollableTabsWrapper>
-            <TabsList className="flex min-w-max gap-2 rounded-[24px] border border-emerald-100/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.9)_0%,rgba(242,250,246,0.92)_100%)] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_16px_30px_rgba(15,23,42,0.04)] xl:min-w-0 xl:grid xl:w-full xl:grid-cols-3">
+            <TabsList className="flex min-w-max gap-2 rounded-[24px] border border-emerald-100/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.9)_0%,rgba(242,250,246,0.92)_100%)] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_16px_30px_rgba(15,23,42,0.04)] xl:min-w-0 xl:grid xl:w-full xl:grid-cols-2">
               <TabsTrigger
                 value="profiles"
                 className="shrink-0 rounded-[18px] border border-slate-200/40 bg-white/50 px-5 py-3 text-slate-500 transition-colors hover:border-emerald-100 hover:bg-white/80 hover:text-emerald-800 data-active:border-emerald-200 data-active:bg-[linear-gradient(135deg,rgba(255,255,255,0.98)_0%,rgba(236,253,245,0.98)_100%)] data-active:text-emerald-900 data-active:shadow-[0_14px_26px_rgba(16,185,129,0.12)] xl:w-full"
               >
                 <UsersRound className="size-4" />
                 Profil Guru
-              </TabsTrigger>
-              <TabsTrigger
-                value="subjects"
-                className="shrink-0 rounded-[18px] border border-slate-200/40 bg-white/50 px-5 py-3 text-slate-500 transition-colors hover:border-emerald-100 hover:bg-white/80 hover:text-emerald-800 data-active:border-emerald-200 data-active:bg-[linear-gradient(135deg,rgba(255,255,255,0.98)_0%,rgba(236,253,245,0.98)_100%)] data-active:text-emerald-900 data-active:shadow-[0_14px_26px_rgba(16,185,129,0.12)] xl:w-full"
-              >
-                <BookOpen className="size-4" />
-                Penempatan Mapel
               </TabsTrigger>
               <TabsTrigger
                 value="homerooms"
@@ -747,79 +627,6 @@ export function TeacherSection({
             </DataTableCard>
           </TabsContent>
 
-          <TabsContent value="subjects" className="mt-4">
-            <DataTableCard
-              isLoading={isLoading}
-              columnCount={7}
-              isEmpty={filteredTeacherSubjectAssignments.length === 0}
-              emptyTitle="Belum ada assignment mapel"
-              emptyDescription="Relasi guru ke mapel dan kelas per tahun ajaran akan tampil di tabel ini."
-              icon={BookOpen}
-            >
-              <table className="min-w-full border-separate border-spacing-0 text-left">
-                <thead>
-                  <tr className="bg-[#f3fbf6] text-sm text-slate-700">
-                    {[
-                      "Guru",
-                      "Mapel",
-                      "Kelas",
-                      "Tahun Ajaran",
-                      "Status",
-                      "ID Assignment",
-                      "Aksi",
-                    ].map((label) => (
-                      <th
-                        key={label}
-                        className={`border-b border-emerald-100/90 px-4 py-4 font-medium first:rounded-tl-[24px] last:rounded-tr-[24px] ${label === "Aksi" ? "text-center" : ""}`}
-                      >
-                        {label}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredTeacherSubjectAssignments.map((assignment) => (
-                    <tr
-                      key={assignment.id}
-                      className="bg-white text-sm text-slate-600 transition hover:bg-emerald-50/30"
-                    >
-                      <td className="border-t border-slate-100 px-4 py-4 font-medium text-slate-700">
-                        {assignment.teacher_name}
-                      </td>
-                      <td className="border-t border-slate-100 px-4 py-4">
-                        <div className="space-y-1">
-                          <p>{assignment.subject_name}</p>
-                          <p className="text-xs text-slate-400">
-                            {assignment.subject_code}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="border-t border-slate-100 px-4 py-4">
-                        {assignment.class_name}
-                      </td>
-                      <td className="border-t border-slate-100 px-4 py-4">
-                        {assignment.school_year_name}
-                      </td>
-                      <td className="border-t border-slate-100 px-4 py-4">
-                        <StatusBadge isActive={assignment.is_active} />
-                      </td>
-                      <td className="border-t border-slate-100 px-4 py-4 text-xs text-slate-400">
-                        {assignment.id}
-                      </td>
-                      <td className="border-t border-slate-100 px-4 py-4">
-                        <ActionButtons
-                          onEdit={() => setEditingSubjectAssignment(assignment)}
-                          onDelete={() => setDeleteTarget({ type: "subject", item: assignment })}
-                          isDeletePending={deleteTeacherSubjectAssignmentMutation.isPending}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </DataTableCard>
-          </TabsContent>
-
           <TabsContent value="homerooms" className="mt-4">
             <DataTableCard
               isLoading={isLoading}
@@ -909,7 +716,7 @@ export function TeacherSection({
         onSubmit={(payload) => createTeacherProfileMutation.mutate(payload)}
       />
       <TeacherProfileEditModal
-        key={editingProfile?.id ?? "closed"}
+        key={editingProfile?.id ?? "profile-closed"}
         teacher={editingProfile}
         open={Boolean(editingProfile)}
         onOpenChange={(open) => {
@@ -917,37 +724,6 @@ export function TeacherSection({
         }}
         isPending={updateTeacherProfileMutation.isPending}
         onSubmit={(payload) => updateTeacherProfileMutation.mutate(payload)}
-      />
-
-      <TeacherSubjectAssignmentCreateModal
-        open={subjectModalOpen}
-        onOpenChange={setSubjectModalOpen}
-        teacherProfiles={teacherProfiles}
-        subjects={subjectsQuery.data ?? []}
-        classes={classesQuery.data ?? []}
-        schoolYears={schoolYearsQuery.data ?? []}
-        isPending={createTeacherSubjectAssignmentMutation.isPending}
-        onSubmit={(payload) => createTeacherSubjectAssignmentMutation.mutate(payload)}
-      />
-      <TeacherSubjectAssignmentEditModal
-        key={editingSubjectAssignment?.id ?? "closed"}
-        assignment={editingSubjectAssignment}
-        open={Boolean(editingSubjectAssignment)}
-        onOpenChange={(open) => {
-          if (!open) setEditingSubjectAssignment(null);
-        }}
-        teacherProfiles={teacherProfiles}
-        subjects={subjectsQuery.data ?? []}
-        classes={classesQuery.data ?? []}
-        schoolYears={schoolYearsQuery.data ?? []}
-        isPending={updateTeacherSubjectAssignmentMutation.isPending}
-        onSubmit={(payload) => {
-          if (!editingSubjectAssignment) return;
-          updateTeacherSubjectAssignmentMutation.mutate({
-            id: editingSubjectAssignment.id,
-            payload,
-          });
-        }}
       />
 
       <HomeroomAssignmentCreateModal
@@ -960,7 +736,7 @@ export function TeacherSection({
         onSubmit={(payload) => createHomeroomAssignmentMutation.mutate(payload)}
       />
       <HomeroomAssignmentEditModal
-        key={editingHomeroomAssignment?.id ?? "closed"}
+        key={editingHomeroomAssignment?.id ?? "homeroom-assignment-closed"}
         assignment={editingHomeroomAssignment}
         open={Boolean(editingHomeroomAssignment)}
         onOpenChange={(open) => {
@@ -987,17 +763,12 @@ export function TeacherSection({
         description={getTeacherDeleteDescription(deleteTarget)}
         isPending={
           deleteTeacherProfileMutation.isPending ||
-          deleteTeacherSubjectAssignmentMutation.isPending ||
           deleteHomeroomAssignmentMutation.isPending
         }
         onConfirm={() => {
           if (!deleteTarget) return;
           if (deleteTarget.type === "profile") {
             deleteTeacherProfileMutation.mutate(deleteTarget.item.user_id);
-            return;
-          }
-          if (deleteTarget.type === "subject") {
-            deleteTeacherSubjectAssignmentMutation.mutate(deleteTarget.item.id);
             return;
           }
           deleteHomeroomAssignmentMutation.mutate(deleteTarget.item.id);
@@ -1009,7 +780,6 @@ export function TeacherSection({
 
 function getTeacherDeleteTitle(target: TeacherDeleteTarget | null) {
   if (target?.type === "profile") return "Hapus Guru?";
-  if (target?.type === "subject") return "Hapus Assignment Mapel?";
   if (target?.type === "homeroom") return "Hapus Assignment Walas?";
   return "Konfirmasi Penghapusan";
 }
@@ -1018,9 +788,6 @@ function getTeacherDeleteDescription(target: TeacherDeleteTarget | null) {
   if (!target) return "Data ini akan dihapus permanen.";
   if (target.type === "profile") {
     return `Profil dan akun guru "${target.item.name}" akan dihapus permanen.`;
-  }
-  if (target.type === "subject") {
-    return `Assignment mapel "${target.item.subject_name}" untuk ${target.item.teacher_name} akan dihapus permanen.`;
   }
   return `Assignment wali kelas "${target.item.class_name}" untuk ${target.item.teacher_name} akan dihapus permanen.`;
 }

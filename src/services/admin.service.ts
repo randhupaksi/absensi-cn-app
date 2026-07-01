@@ -14,6 +14,9 @@ import type {
   AdminStudentClassMembershipPayload,
   AdminStudentPayload,
   AdminSubject,
+  AdminSubjectPayload,
+  AdminSubjectScheduleFilters,
+  AdminSubjectScheduleOverview,
   AdminTeacherDirectory,
   AdminTeacherProfile,
   AdminTeacherProfilePayload,
@@ -111,6 +114,50 @@ export async function getAdminSubjects() {
       "/admin/subjects",
     );
     return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function getAdminSubjectSchedules(filters: AdminSubjectScheduleFilters = {}) {
+  try {
+    const response = await apiClient.get<ApiEnvelope<AdminSubjectScheduleOverview[]>>(
+      "/admin/subject-schedules",
+      { params: filters },
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function createAdminSubject(payload: AdminSubjectPayload) {
+  try {
+    const response = await apiClient.post<ApiEnvelope<AdminSubject>>(
+      "/admin/subjects",
+      payload,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function updateAdminSubject(id: string, payload: AdminSubjectPayload) {
+  try {
+    const response = await apiClient.patch<ApiEnvelope<AdminSubject>>(
+      `/admin/subjects/${id}`,
+      payload,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function deleteAdminSubject(id: string) {
+  try {
+    await apiClient.delete(`/admin/subjects/${id}`);
   } catch (error) {
     throw new Error(getErrorMessage(error));
   }

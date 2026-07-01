@@ -17,6 +17,7 @@ type PremiumModalProps = {
   description: string;
   icon: LucideIcon;
   children: ReactNode;
+  footer?: ReactNode;
   className?: string;
 };
 
@@ -41,6 +42,7 @@ export function PremiumModal({
   description,
   icon: Icon,
   children,
+  footer,
   className,
 }: PremiumModalProps) {
   return (
@@ -78,6 +80,12 @@ export function PremiumModal({
         <div className="relative min-h-0 flex-1 overflow-y-auto px-[1.45rem] pt-[1.4rem] pb-[1.55rem] [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-[2px] [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-[linear-gradient(180deg,rgba(52,211,153,0.52),rgba(22,163,74,0.42))] [&::-webkit-scrollbar-thumb]:bg-clip-padding">
           {children}
         </div>
+
+        {footer ? (
+          <div className="relative shrink-0 bg-[linear-gradient(180deg,rgba(244,250,246,0.9)_0%,rgba(255,255,255,0.96)_100%)] px-[1.3rem] py-[1.1rem] after:absolute after:inset-x-[1.3rem] after:top-0 after:h-px after:bg-[linear-gradient(90deg,rgba(16,185,129,0.06)_0%,rgba(16,185,129,0.22)_22%,rgba(148,163,184,0.2)_52%,rgba(16,185,129,0.22)_78%,rgba(16,185,129,0.06)_100%)]">
+            {footer}
+          </div>
+        ) : null}
       </DialogContent>
     </Dialog>
   );

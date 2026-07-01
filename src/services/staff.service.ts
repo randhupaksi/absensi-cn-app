@@ -352,7 +352,7 @@ export async function getTeacherSubjectCurrentSession(hari: string, jam: string)
       "/teacher/subject/current-session",
       { params: { hari, jam } },
     );
-    return response.data.data;
+    return response.data.data ?? null;
   } catch (error) {
     throw new Error(getErrorMessage(error));
   }

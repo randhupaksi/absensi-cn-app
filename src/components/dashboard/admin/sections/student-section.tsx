@@ -724,7 +724,7 @@ export function StudentSection({
         onSubmit={(payload) => createStudentMutation.mutate(payload)}
       />
       <StudentProfileEditModal
-        key={editingStudent?.id ?? "closed"}
+        key={editingStudent?.id ?? "student-closed"}
         student={editingStudent}
         open={Boolean(editingStudent)}
         onOpenChange={(open) => {
@@ -743,7 +743,7 @@ export function StudentSection({
         onSubmit={(payload) => createMembershipMutation.mutate(payload)}
       />
       <StudentMembershipEditModal
-        key={editingMembership?.id ?? "closed"}
+        key={editingMembership?.id ?? "membership-closed"}
         membership={editingMembership}
         open={Boolean(editingMembership)}
         onOpenChange={(open) => {
@@ -763,7 +763,7 @@ export function StudentSection({
         onSubmit={(payload) => createRuleMutation.mutate(payload)}
       />
       <AttendanceRuleEditModal
-        key={editingRule?.id ?? "closed"}
+        key={editingRule?.id ?? "rule-closed"}
         rule={editingRule}
         open={Boolean(editingRule)}
         onOpenChange={(open) => {

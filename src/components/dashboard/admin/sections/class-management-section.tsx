@@ -322,7 +322,7 @@ export function ClassManagementSection({
       />
 
       <ClassFormModal
-        key={editingClass?.id ?? "closed"}
+        key={editingClass?.id ?? "class-edit-closed"}
         title="Edit Kelas"
         description="Perbarui identitas kelas tanpa memutus relasi data yang sudah terhubung."
         open={Boolean(editingClass)}

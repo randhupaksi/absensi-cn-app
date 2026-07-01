@@ -268,7 +268,7 @@ export function AdminManagementSection({
         onSubmit={(payload) => createAdminMutation.mutate(payload)}
       />
       <AdminEditModal
-        key={editingUser?.id ?? "closed"}
+        key={editingUser?.id ?? "admin-edit-closed"}
         user={editingUser}
         open={Boolean(editingUser)}
         onOpenChange={(open) => {
