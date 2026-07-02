@@ -68,14 +68,12 @@ export type StaffStudentSummary = {
   nis: string;
   nisn?: string;
   gender?: string;
-  phone?: string;
   class_id?: string;
   class_name?: string;
   school_year_id?: string;
   school_year_name?: string;
   membership_id?: string;
   membership_status?: string;
-  entry_year: number;
   is_active: boolean;
   present_count: number;
   late_count: number;
@@ -237,7 +235,7 @@ export type StaffTeacherMe = {
   teacher_id: string;
   name: string;
   username?: string;
-  nip?: string;
+  gender?: string;
   is_homeroom_teacher: boolean;
   has_subject_assignments: boolean;
   active_homeroom?: StaffHomeroomContext;

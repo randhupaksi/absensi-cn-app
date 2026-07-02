@@ -17,12 +17,9 @@ import { toast } from "sonner";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type FilterStatus = "all" | "active" | "inactive";
-type SortBy = "name" | "nip";
+type SortBy = "name" | "username";
 type Columns = {
-  nuptk: boolean;
   gender: boolean;
-  phone: boolean;
-  address: boolean;
   status: boolean;
 };
 
@@ -98,22 +95,16 @@ async function generateGuruPdf(
   });
 
   // Table columns
-  const head: string[][] = [["No", "Nama Guru", "NIP"]];
-  if (columns.nuptk) head[0].push("NUPTK");
+  const head: string[][] = [["No", "Nama Guru", "Username"]];
   if (columns.gender) head[0].push("Jenis Kelamin");
-  if (columns.phone) head[0].push("No. Telepon");
-  if (columns.address) head[0].push("Alamat");
   if (columns.status) head[0].push("Status");
 
   const body = data.map((t, i) => {
-    const row: string[] = [String(i + 1), t.name, t.nip || "—"];
-    if (columns.nuptk) row.push(t.nuptk || "—");
+    const row: string[] = [String(i + 1), t.name, t.username || "—"];
     if (columns.gender)
       row.push(
         t.gender === "MALE" ? "Laki-laki" : t.gender === "FEMALE" ? "Perempuan" : "—",
       );
-    if (columns.phone) row.push(t.phone || "—");
-    if (columns.address) row.push(t.address || "—");
     if (columns.status) row.push(t.is_active ? "Aktif" : "Non-aktif");
     return row;
   });
@@ -172,10 +163,7 @@ type Props = {
 export function GuruReportModal({ open, onOpenChange, teachers }: Props) {
   const [filterStatus, setFilterStatus] = useState<FilterStatus | null>(null);
   const [columns, setColumns] = useState<Columns>({
-    nuptk: false,
     gender: false,
-    phone: false,
-    address: false,
     status: true,
   });
   const [sortBy, setSortBy] = useState<SortBy | null>(null);
@@ -196,7 +184,7 @@ export function GuruReportModal({ open, onOpenChange, teachers }: Props) {
 
   function resetState() {
     setFilterStatus(null);
-    setColumns({ nuptk: false, gender: false, phone: false, address: false, status: true });
+    setColumns({ gender: false, status: true });
     setSortBy(null);
   }
 
@@ -218,12 +206,12 @@ export function GuruReportModal({ open, onOpenChange, teachers }: Props) {
     }
     const sorted = [...filtered].sort((a, b) => {
       if (sortBy === "name") return a.name.localeCompare(b.name, "id");
-      return (a.nip ?? "").localeCompare(b.nip ?? "", "id");
+      return (a.username ?? "").localeCompare(b.username ?? "", "id");
     });
     const filterLabel =
       filterStatus === "active" ? "Aktif Saja" :
       filterStatus === "inactive" ? "Non-aktif Saja" : "Semua Guru";
-    const sortLabel = sortBy === "name" ? "Nama (A–Z)" : "NIP";
+    const sortLabel = sortBy === "name" ? "Nama (A–Z)" : "Username";
     setGenerating(true);
     try {
       await generateGuruPdf(sorted, filterLabel, sortLabel, columns);
@@ -288,26 +276,11 @@ export function GuruReportModal({ open, onOpenChange, teachers }: Props) {
                 answered
               >
                 <div className="grid gap-2 sm:grid-cols-3">
-                  <ReportCheckbox checked disabled label="Nama & NIP" badge="wajib" />
-                  <ReportCheckbox
-                    checked={columns.nuptk}
-                    onChange={(v) => setColumns((c) => ({ ...c, nuptk: v }))}
-                    label="NUPTK"
-                  />
+                  <ReportCheckbox checked disabled label="Nama & Username" badge="wajib" />
                   <ReportCheckbox
                     checked={columns.gender}
                     onChange={(v) => setColumns((c) => ({ ...c, gender: v }))}
                     label="Jenis Kelamin"
-                  />
-                  <ReportCheckbox
-                    checked={columns.phone}
-                    onChange={(v) => setColumns((c) => ({ ...c, phone: v }))}
-                    label="No. Telepon"
-                  />
-                  <ReportCheckbox
-                    checked={columns.address}
-                    onChange={(v) => setColumns((c) => ({ ...c, address: v }))}
-                    label="Alamat"
                   />
                   <ReportCheckbox
                     checked={columns.status}
@@ -342,9 +315,9 @@ export function GuruReportModal({ open, onOpenChange, teachers }: Props) {
                     onClick={() => setSortBy("name")}
                   />
                   <ReportRadio
-                    selected={sortBy === "nip"}
-                    label="NIP"
-                    onClick={() => setSortBy("nip")}
+                    selected={sortBy === "username"}
+                    label="Username"
+                    onClick={() => setSortBy("username")}
                   />
                 </div>
               </QuestionBlock>

@@ -96,7 +96,7 @@ export function HomeroomAssignmentCreateModal({
               options={teacherProfiles.map((t) => ({
                 value: t.id,
                 label: t.name,
-                description: t.nip || t.username || t.id,
+                description: t.username || t.id,
               }))}
             />
             <FieldError message={errors.teacher_id} />
@@ -202,7 +202,7 @@ export function HomeroomAssignmentEditModal({
               options={teacherProfiles.map((t) => ({
                 value: t.id,
                 label: t.name,
-                description: t.nip || t.username || t.id,
+                description: t.username || t.id,
               }))}
             />
             <FieldError message={errors.teacher_id} />

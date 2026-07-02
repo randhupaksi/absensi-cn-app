@@ -171,7 +171,7 @@ export function TeacherSubjectAssignmentCreateModal({
       <div className="grid gap-5">
         <div className="grid gap-4 md:grid-cols-2">
           <FieldGroup label="Guru">
-            <RadixSelectField value={form.teacher_id} onValueChange={(v) => set("teacher_id", v)} placeholder="Pilih guru" options={teacherProfiles.map((t) => ({ value: t.id, label: t.name, description: t.nip || t.username || t.id }))} />
+            <RadixSelectField value={form.teacher_id} onValueChange={(v) => set("teacher_id", v)} placeholder="Pilih guru" options={teacherProfiles.map((t) => ({ value: t.id, label: t.name, description: t.username || t.id }))} />
             <FieldError message={errors.teacher_id} />
           </FieldGroup>
           <FieldGroup label="Mapel">
@@ -255,7 +255,7 @@ export function TeacherSubjectAssignmentEditModal({
       <div className="grid gap-5">
         <div className="grid gap-4 md:grid-cols-2">
           <FieldGroup label="Guru">
-            <RadixSelectField value={form.teacher_id} onValueChange={(v) => set("teacher_id", v)} placeholder="Pilih guru" options={teacherProfiles.map((t) => ({ value: t.id, label: t.name, description: t.nip || t.username || t.id }))} />
+            <RadixSelectField value={form.teacher_id} onValueChange={(v) => set("teacher_id", v)} placeholder="Pilih guru" options={teacherProfiles.map((t) => ({ value: t.id, label: t.name, description: t.username || t.id }))} />
             <FieldError message={errors.teacher_id} />
           </FieldGroup>
           <FieldGroup label="Mapel">

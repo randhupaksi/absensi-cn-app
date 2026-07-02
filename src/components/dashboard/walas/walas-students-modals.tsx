@@ -182,7 +182,7 @@ export function StudentDetailModal({
                       <p>NISN: {student.nisn || "-"}</p>
                       <p>Gender: {formatGender(student.gender)}</p>
                       <p>Tahun ajaran: {student.school_year_name || "-"}</p>
-                      <p>Telepon: {student.phone || "-"}</p>
+                      <p>NISN: {student.nisn || "-"}</p>
                       <p>Status kelas: {student.membership_status || "-"}</p>
                     </div>
                   </div>

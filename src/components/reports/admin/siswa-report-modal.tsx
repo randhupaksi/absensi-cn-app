@@ -20,32 +20,14 @@ import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type FilterStatus = "all" | "active" | "inactive" | "entry_year";
-type SortBy = "name" | "nis" | "entry_year";
+type FilterStatus = "all" | "active" | "inactive";
+type SortBy = "name" | "nis" | "nisn";
 type Columns = {
   nisn: boolean;
   gender: boolean;
-  phone: boolean;
-  address: boolean;
-  parent: boolean;
-  birth: boolean;
-  entryYear: boolean;
 };
 
 // ─── PDF generator ────────────────────────────────────────────────────────────
-
-function formatDate(dateStr?: string): string {
-  if (!dateStr) return "—";
-  try {
-    return new Date(dateStr).toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    });
-  } catch {
-    return dateStr;
-  }
-}
 
 async function generateSiswaPdf(
   data: AdminStudent[],
@@ -120,11 +102,6 @@ async function generateSiswaPdf(
   const head: string[][] = [["No", "Nama Siswa", "NIS"]];
   if (columns.nisn) head[0].push("NISN");
   if (columns.gender) head[0].push("Jenis Kelamin");
-  if (columns.phone) head[0].push("No. Telepon");
-  if (columns.address) head[0].push("Alamat");
-  if (columns.parent) head[0].push("Orang Tua");
-  if (columns.birth) head[0].push("Tempat, Tgl. Lahir");
-  if (columns.entryYear) head[0].push("Angkatan");
 
   const body = data.map((s, i) => {
     const row: string[] = [String(i + 1), s.name, s.nis];
@@ -133,17 +110,6 @@ async function generateSiswaPdf(
       row.push(
         s.gender === "MALE" ? "Laki-laki" : s.gender === "FEMALE" ? "Perempuan" : "—",
       );
-    if (columns.phone) row.push(s.phone || "—");
-    if (columns.address) row.push(s.address || "—");
-    if (columns.parent) {
-      const parent = [s.parent_name, s.parent_phone].filter(Boolean).join("\n") || "—";
-      row.push(parent);
-    }
-    if (columns.birth) {
-      const birthInfo = s.birth_place_date || [s.birth_place, formatDate(s.birth_date)].filter(Boolean).join(", ") || "—";
-      row.push(birthInfo);
-    }
-    if (columns.entryYear) row.push(String(s.entry_year));
     return row;
   });
 
@@ -201,24 +167,12 @@ type Props = {
 
 export function SiswaReportModal({ open, onOpenChange, students }: Props) {
   const [filterStatus, setFilterStatus] = useState<FilterStatus | null>(null);
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [columns, setColumns] = useState<Columns>({
     nisn: false,
     gender: false,
-    phone: false,
-    address: false,
-    parent: false,
-    birth: false,
-    entryYear: true,
   });
   const [sortBy, setSortBy] = useState<SortBy | null>(null);
   const [generating, setGenerating] = useState(false);
-
-  const entryYears = useMemo(
-    () =>
-      [...new Set(students.map((s) => s.entry_year))].sort((a, b) => b - a),
-    [students],
-  );
 
   const counts = useMemo(
     () => ({
@@ -229,9 +183,7 @@ export function SiswaReportModal({ open, onOpenChange, students }: Props) {
     [students],
   );
 
-  const q1FullyAnswered =
-    filterStatus !== null &&
-    (filterStatus !== "entry_year" || selectedYear !== null);
+  const q1FullyAnswered = filterStatus !== null;
   const showQ2 = q1FullyAnswered;
   const canDownload = q1FullyAnswered && sortBy !== null;
 
@@ -239,22 +191,14 @@ export function SiswaReportModal({ open, onOpenChange, students }: Props) {
     if (!q1FullyAnswered) return 0;
     if (filterStatus === "active") return counts.active;
     if (filterStatus === "inactive") return counts.inactive;
-    if (filterStatus === "entry_year" && selectedYear !== null)
-      return students.filter((s) => s.entry_year === selectedYear).length;
     return counts.all;
-  }, [q1FullyAnswered, filterStatus, selectedYear, counts, students]);
+  }, [q1FullyAnswered, filterStatus, counts]);
 
   function resetState() {
     setFilterStatus(null);
-    setSelectedYear(null);
     setColumns({
       nisn: false,
       gender: false,
-      phone: false,
-      address: false,
-      parent: false,
-      birth: false,
-      entryYear: true,
     });
     setSortBy(null);
   }
@@ -269,7 +213,6 @@ export function SiswaReportModal({ open, onOpenChange, students }: Props) {
     const filtered = students.filter((s) => {
       if (filterStatus === "active") return s.is_active;
       if (filterStatus === "inactive") return !s.is_active;
-      if (filterStatus === "entry_year") return s.entry_year === selectedYear;
       return true;
     });
     if (filtered.length === 0) {
@@ -279,16 +222,14 @@ export function SiswaReportModal({ open, onOpenChange, students }: Props) {
     const sorted = [...filtered].sort((a, b) => {
       if (sortBy === "name") return a.name.localeCompare(b.name, "id");
       if (sortBy === "nis") return a.nis.localeCompare(b.nis, "id");
-      if (sortBy === "entry_year") return b.entry_year - a.entry_year;
-      return 0;
+      return (a.nisn ?? "").localeCompare(b.nisn ?? "", "id");
     });
     const filterLabel =
       filterStatus === "active" ? "Aktif Saja" :
-      filterStatus === "inactive" ? "Non-aktif Saja" :
-      filterStatus === "entry_year" ? `Angkatan ${selectedYear}` : "Semua Siswa";
+      filterStatus === "inactive" ? "Non-aktif Saja" : "Semua Siswa";
     const sortLabel =
       sortBy === "name" ? "Nama (A–Z)" :
-      sortBy === "nis" ? "NIS" : "Angkatan (Terbaru)";
+      sortBy === "nis" ? "NIS" : "NISN";
 
     setGenerating(true);
     try {
@@ -316,72 +257,26 @@ export function SiswaReportModal({ open, onOpenChange, students }: Props) {
           label="Saring berdasarkan"
           answered={q1FullyAnswered}
         >
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-3">
             <ReportRadio
               selected={filterStatus === "all"}
               label="Semua Siswa"
               badge={`${counts.all}`}
-              onClick={() => { setFilterStatus("all"); setSelectedYear(null); setSortBy(null); }}
+              onClick={() => { setFilterStatus("all"); setSortBy(null); }}
             />
             <ReportRadio
               selected={filterStatus === "active"}
               label="Aktif Saja"
               badge={`${counts.active}`}
-              onClick={() => { setFilterStatus("active"); setSelectedYear(null); setSortBy(null); }}
+              onClick={() => { setFilterStatus("active"); setSortBy(null); }}
             />
             <ReportRadio
               selected={filterStatus === "inactive"}
               label="Non-aktif"
               badge={`${counts.inactive}`}
-              onClick={() => { setFilterStatus("inactive"); setSelectedYear(null); setSortBy(null); }}
-            />
-            <ReportRadio
-              selected={filterStatus === "entry_year"}
-              label="Per Angkatan"
-              onClick={() => { setFilterStatus("entry_year"); setSelectedYear(null); setSortBy(null); }}
+              onClick={() => { setFilterStatus("inactive"); setSortBy(null); }}
             />
           </div>
-
-          {/* Q1b — Year picker (appears only when "Per Angkatan" selected) */}
-          <AnimatePresence>
-            {filterStatus === "entry_year" && (
-              <motion.div
-                key="year-picker"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.22, ease: "easeOut" }}
-                className="overflow-hidden"
-              >
-                <p className="mt-3 mb-2 text-[0.78rem] font-semibold text-slate-500 uppercase tracking-wide">
-                  Pilih angkatan:
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {entryYears.map((year) => {
-                    const count = students.filter((s) => s.entry_year === year).length;
-                    return (
-                      <button
-                        key={year}
-                        type="button"
-                        onClick={() => { setSelectedYear(year); setSortBy(null); }}
-                        className={cn(
-                          "rounded-full border px-4 py-2 text-sm font-semibold outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-emerald-500/30",
-                          selectedYear === year
-                            ? "border-emerald-400 bg-emerald-600 text-white shadow-[0_4px_10px_rgba(5,150,105,0.28)]"
-                            : "border-slate-200 bg-white text-slate-700 hover:border-emerald-300 hover:bg-emerald-50",
-                        )}
-                      >
-                        Angkatan {year}
-                        <span className={cn("ml-1.5 text-xs", selectedYear === year ? "opacity-80" : "opacity-50")}>
-                          ({count})
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </QuestionBlock>
 
         {/* Q2 — Columns */}
@@ -410,31 +305,6 @@ export function SiswaReportModal({ open, onOpenChange, students }: Props) {
                     checked={columns.gender}
                     onChange={(v) => setColumns((c) => ({ ...c, gender: v }))}
                     label="Jenis Kelamin"
-                  />
-                  <ReportCheckbox
-                    checked={columns.phone}
-                    onChange={(v) => setColumns((c) => ({ ...c, phone: v }))}
-                    label="No. Telepon"
-                  />
-                  <ReportCheckbox
-                    checked={columns.address}
-                    onChange={(v) => setColumns((c) => ({ ...c, address: v }))}
-                    label="Alamat"
-                  />
-                  <ReportCheckbox
-                    checked={columns.parent}
-                    onChange={(v) => setColumns((c) => ({ ...c, parent: v }))}
-                    label="Orang Tua"
-                  />
-                  <ReportCheckbox
-                    checked={columns.birth}
-                    onChange={(v) => setColumns((c) => ({ ...c, birth: v }))}
-                    label="Tempat, Tgl. Lahir"
-                  />
-                  <ReportCheckbox
-                    checked={columns.entryYear}
-                    onChange={(v) => setColumns((c) => ({ ...c, entryYear: v }))}
-                    label="Angkatan"
                   />
                 </div>
               </QuestionBlock>
@@ -469,9 +339,9 @@ export function SiswaReportModal({ open, onOpenChange, students }: Props) {
                     onClick={() => setSortBy("nis")}
                   />
                   <ReportRadio
-                    selected={sortBy === "entry_year"}
-                    label="Angkatan"
-                    onClick={() => setSortBy("entry_year")}
+                    selected={sortBy === "nisn"}
+                    label="NISN"
+                    onClick={() => setSortBy("nisn")}
                   />
                 </div>
               </QuestionBlock>

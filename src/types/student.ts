@@ -7,14 +7,6 @@ export type StudentProfile = {
   nis: string;
   nisn?: string;
   gender?: string;
-  birth_place?: string;
-  birth_date?: string;
-  birth_place_date?: string;
-  address?: string;
-  phone?: string;
-  parent_name?: string;
-  parent_phone?: string;
-  entry_year: number;
   is_active: boolean;
   class_id?: string;
   class_name?: string;

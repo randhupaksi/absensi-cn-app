@@ -99,8 +99,7 @@ export function WalasStudentsPage() {
         normalizedQuery.length === 0 ||
         student.name.toLowerCase().includes(normalizedQuery) ||
         student.nis.toLowerCase().includes(normalizedQuery) ||
-        (student.nisn ?? "").toLowerCase().includes(normalizedQuery) ||
-        (student.phone ?? "").toLowerCase().includes(normalizedQuery);
+        (student.nisn ?? "").toLowerCase().includes(normalizedQuery);
 
       return matchesStatus && matchesQuery;
     });
@@ -287,9 +286,7 @@ export function WalasStudentsPage() {
                                   <p className="truncate font-semibold text-slate-900">
                                     {student.name}
                                   </p>
-                                  <p className="truncate text-slate-500">
-                                    Angkatan {student.entry_year}
-                                  </p>
+                                  <p className="truncate text-slate-500">{student.class_name || "-"}</p>
                                 </div>
                               </div>
                             </td>

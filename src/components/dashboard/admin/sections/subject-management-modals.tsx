@@ -204,7 +204,7 @@ export function TeachingAssignmentFormModal({
             options={teachers.filter((item) => item.is_active).map((item) => ({
               value: item.id,
               label: item.name,
-              description: item.nip || item.username || undefined,
+              description: item.username || undefined,
             }))}
             error={form.formState.errors.teacher_id?.message}
           />

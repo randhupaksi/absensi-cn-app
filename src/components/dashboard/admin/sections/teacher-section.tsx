@@ -22,15 +22,13 @@ import { RadixSelectField } from "@/components/ui/radix-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   createAdminHomeroomAssignment,
-  createAdminTeacherProfile,
-  createAdminUser,
+  createAdminTeacherAccount,
   deleteAdminHomeroomAssignment,
   deleteAdminUser,
   getAdminClasses,
   getAdminSchoolYears,
   updateAdminHomeroomAssignment,
-  updateAdminTeacherProfile,
-  updateAdminUser,
+  updateAdminTeacherAccount,
 } from "@/services/admin.service";
 import type {
   AdminHomeroomAssignment,
@@ -117,25 +115,7 @@ export function TeacherSection({
   });
 
   const createTeacherProfileMutation = useMutation({
-    mutationFn: async (payload: TeacherProfileCreatePayload) => {
-      const account = await createAdminUser({
-        name: payload.name,
-        role: "TEACHER",
-        username: payload.username,
-        nis: "",
-        password: payload.password,
-      });
-
-      return createAdminTeacherProfile({
-        user_id: account.id,
-        nip: payload.nip,
-        nuptk: payload.nuptk,
-        gender: payload.gender,
-        phone: payload.phone,
-        address: payload.address,
-        is_active: payload.is_active,
-      });
-    },
+    mutationFn: createAdminTeacherAccount,
     onSuccess: () => {
       toast.success("Akun dan profil guru baru berhasil ditambahkan.");
       void queryClient.invalidateQueries({ queryKey: ["admin-teacher-profiles"] });
@@ -167,23 +147,7 @@ export function TeacherSection({
         throw new Error("Profil guru tidak ditemukan.");
       }
 
-      await updateAdminUser(editingProfile.user_id, {
-        name: payload.name,
-        role: "TEACHER",
-        username: payload.username,
-        nis: "",
-        password: payload.password,
-      });
-
-      return updateAdminTeacherProfile(editingProfile.id, {
-        user_id: editingProfile.user_id,
-        nip: payload.nip,
-        nuptk: payload.nuptk,
-        gender: payload.gender,
-        phone: payload.phone,
-        address: payload.address,
-        is_active: payload.is_active,
-      });
+      return updateAdminTeacherAccount(editingProfile.id, payload);
     },
     onSuccess: () => {
       toast.success("Profil guru berhasil diperbarui.");
@@ -275,10 +239,7 @@ export function TeacherSection({
         const matchesQuery =
           normalizedQuery.length === 0 ||
           teacher.name.toLowerCase().includes(normalizedQuery) ||
-          (teacher.username ?? "").toLowerCase().includes(normalizedQuery) ||
-          (teacher.nip ?? "").toLowerCase().includes(normalizedQuery) ||
-          (teacher.nuptk ?? "").toLowerCase().includes(normalizedQuery) ||
-          (teacher.phone ?? "").toLowerCase().includes(normalizedQuery);
+          (teacher.username ?? "").toLowerCase().includes(normalizedQuery);
         return matchesStatus && matchesQuery;
       }),
     [teacherProfiles, statusFilter, normalizedQuery],
@@ -348,14 +309,14 @@ export function TeacherSection({
         accentClass: "from-emerald-500 via-teal-500 to-green-500",
       },
       {
-        label: "Punya NIP",
-        value: teacherProfiles.filter((teacher) => Boolean(teacher.nip?.trim())).length,
+        label: "Guru Mapel",
+        value: new Set(teacherSubjectAssignments.map((assignment) => assignment.teacher_id)).size,
         icon: IdCard,
         accentClass: "from-teal-500 via-emerald-500 to-lime-500",
       },
       {
-        label: "Punya NUPTK",
-        value: teacherProfiles.filter((teacher) => Boolean(teacher.nuptk?.trim())).length,
+        label: "Guru Walas",
+        value: new Set(homeroomAssignments.map((assignment) => assignment.teacher_id)).size,
         icon: FilePenLine,
         accentClass: "from-amber-400 via-orange-400 to-emerald-500",
       },
@@ -365,6 +326,7 @@ export function TeacherSection({
     activeTab,
     activeTeacherCount,
     homeroomAssignments,
+    teacherSubjectAssignments,
     teacherProfiles,
     totalHomeroomAssignments,
   ]);
@@ -548,8 +510,7 @@ export function TeacherSection({
                     {[
                       "Guru",
                       "Username",
-                      "NIP / NUPTK",
-                      "Kontak",
+                      "Gender",
                       "Mapel",
                       "Walas",
                       "Status",
@@ -589,20 +550,7 @@ export function TeacherSection({
                         {teacher.username || "-"}
                       </td>
                       <td className="border-t border-slate-100 px-4 py-4">
-                        <div className="space-y-1">
-                          <p>{teacher.nip || "-"}</p>
-                          <p className="text-xs text-slate-400">
-                            NUPTK: {teacher.nuptk || "-"}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="border-t border-slate-100 px-4 py-4">
-                        <div className="space-y-1">
-                          <p>{teacher.phone || "-"}</p>
-                          <p className="text-xs text-slate-400">
-                            {teacher.gender || "-"}
-                          </p>
-                        </div>
+                        {teacher.gender === "MALE" ? "Laki-laki" : teacher.gender === "FEMALE" ? "Perempuan" : "-"}
                       </td>
                       <td className="border-t border-slate-100 px-4 py-4">
                         {subjectAssignmentsByTeacher[teacher.id] ?? 0}

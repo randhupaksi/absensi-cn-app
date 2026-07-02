@@ -143,7 +143,7 @@ export function StudentDetailModal({
                     <p>NISN: {student.nisn || "-"}</p>
                     <p>Kelas: {student.class_name || "-"}</p>
                     <p>Gender: {formatGender(student.gender)}</p>
-                    <p>Telepon: {student.phone || "-"}</p>
+                    <p>NISN: {student.nisn || "-"}</p>
                     <p>Tahun ajaran: {student.school_year_name || "-"}</p>
                   </div>
                   <Button

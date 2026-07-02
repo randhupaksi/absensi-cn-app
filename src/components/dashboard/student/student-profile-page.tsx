@@ -2,7 +2,6 @@
 
 import { EmptyState } from "@/components/dashboard/admin/widgets/empty-state";
 import { StudentShell } from "@/components/dashboard/student/student-shell";
-import { formatStudentDate } from "@/components/dashboard/student/student-common";
 import { getStudentProfile } from "@/services/student.service";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -10,10 +9,8 @@ import {
   BookOpen,
   GraduationCap,
   IdCard,
-  Phone,
   ShieldCheck,
   UserRound,
-  UsersRound,
 } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -89,9 +86,8 @@ export function StudentProfilePage() {
                   <div className="mt-5 grid gap-3 sm:grid-cols-2">
                     <InfoRow label="Nama lengkap" value={profile.name} />
                     <InfoRow label="Jenis kelamin" value={formatGender(profile.gender)} />
-                    <InfoRow label="Tempat lahir" value={profile.birth_place || "-"} />
-                    <InfoRow label="Tanggal lahir" value={formatStudentDate(profile.birth_date)} />
-                    <InfoRow label="Tahun masuk" value={String(profile.entry_year)} />
+                    <InfoRow label="NIS" value={profile.nis} />
+                    <InfoRow label="NISN" value={profile.nisn || "-"} />
                     <InfoRow label="Status kelas" value={profile.membership_status || "-"} />
                     <InfoRow label="Kelas aktif" value={profile.class_name || "-"} />
                     <InfoRow label="Tahun ajaran" value={profile.school_year_name || "-"} />
@@ -109,53 +105,6 @@ export function StudentProfilePage() {
             </div>
           </motion.section>
 
-          <section className="grid gap-5 lg:grid-cols-2">
-            <motion.div
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.08, duration: 0.34 }}
-              className="rounded-[1.8rem] border border-white/82 bg-white/90 p-5 shadow-[0_18px_54px_rgba(15,23,42,0.08)]"
-            >
-              <div className="flex items-center gap-3">
-                <span className="flex size-12 items-center justify-center rounded-2xl bg-sky-100 text-sky-700">
-                  <Phone className="size-5" />
-                </span>
-                <div>
-                  <h2 className="text-xl font-semibold text-slate-950">Kontak Siswa</h2>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Nomor dan alamat untuk kebutuhan koordinasi sekolah.
-                  </p>
-                </div>
-              </div>
-              <div className="mt-5 grid gap-3">
-                <InfoRow label="Telepon siswa" value={profile?.phone || "-"} />
-                <InfoRow label="Alamat" value={profile?.address || "-"} />
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.12, duration: 0.34 }}
-              className="rounded-[1.8rem] border border-white/82 bg-white/90 p-5 shadow-[0_18px_54px_rgba(15,23,42,0.08)]"
-            >
-              <div className="flex items-center gap-3">
-                <span className="flex size-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
-                  <UsersRound className="size-5" />
-                </span>
-                <div>
-                  <h2 className="text-xl font-semibold text-slate-950">Kontak Orang Tua</h2>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Dipakai walas atau BK saat perlu tindak lanjut.
-                  </p>
-                </div>
-              </div>
-              <div className="mt-5 grid gap-3">
-                <InfoRow label="Nama orang tua" value={profile?.parent_name || "-"} />
-                <InfoRow label="Telepon orang tua" value={profile?.parent_phone || "-"} />
-              </div>
-            </motion.div>
-          </section>
         </div>
       )}
     </StudentShell>

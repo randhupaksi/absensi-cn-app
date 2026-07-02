@@ -55,8 +55,6 @@ export type AdminTeacherDirectory = {
   name: string;
   role: string;
   class: string;
-  nuptk: string;
-  contact: string;
   avatar_label: string;
 };
 
@@ -65,21 +63,21 @@ export type AdminTeacherProfile = {
   user_id: string;
   name: string;
   username?: string;
-  nip?: string;
-  nuptk?: string;
   gender?: string;
-  phone?: string;
-  address?: string;
   is_active: boolean;
 };
 
 export type AdminTeacherProfilePayload = {
   user_id: string;
-  nip: string;
-  nuptk: string;
   gender: string;
-  phone: string;
-  address: string;
+  is_active: boolean;
+};
+
+export type AdminTeacherAccountPayload = {
+  name: string;
+  username: string;
+  password: string;
+  gender: string;
   is_active: boolean;
 };
 
@@ -234,14 +232,6 @@ export type AdminStudent = {
   nis: string;
   nisn?: string;
   gender?: string;
-  birth_place?: string;
-  birth_date?: string;
-  birth_place_date?: string;
-  address?: string;
-  phone?: string;
-  parent_name?: string;
-  parent_phone?: string;
-  entry_year: number;
   is_active: boolean;
 };
 
@@ -251,13 +241,7 @@ export type AdminStudentPayload = {
   nisn: string;
   password: string;
   gender: string;
-  birth_place: string;
-  birth_date: string;
-  address: string;
-  phone: string;
-  parent_name: string;
-  parent_phone: string;
-  entry_year: number;
+  class_id: string;
   is_active: boolean;
 };
 

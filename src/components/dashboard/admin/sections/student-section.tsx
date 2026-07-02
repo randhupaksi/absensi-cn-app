@@ -24,7 +24,6 @@ import {
   StudentProfileCreateModal,
   StudentProfileEditModal,
   formatGender,
-  formatBirthPlaceDate,
 } from "@/components/dashboard/admin/sections/student-profile-modals";
 import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
 import { Button } from "@/components/ui/button";
@@ -66,7 +65,6 @@ import {
   Printer,
   SlidersHorizontal,
   TimerReset,
-  UserPlus,
   UsersRound,
 } from "lucide-react";
 import { useDeferredValue, useMemo, useState } from "react";
@@ -137,6 +135,7 @@ export function StudentSection({
     onSuccess: () => {
       toast.success("Profil siswa berhasil ditambahkan.");
       void queryClient.invalidateQueries({ queryKey: ["admin-students"] });
+      void queryClient.invalidateQueries({ queryKey: ["admin-student-class-memberships"] });
       setProfileModalOpen(false);
     },
     onError: (error: Error) => toast.error(error.message),
@@ -170,6 +169,7 @@ export function StudentSection({
     onSuccess: () => {
       toast.success("Profil siswa berhasil diperbarui.");
       void queryClient.invalidateQueries({ queryKey: ["admin-students"] });
+      void queryClient.invalidateQueries({ queryKey: ["admin-student-class-memberships"] });
       setEditingStudent(null);
     },
     onError: (error: Error) => toast.error(error.message),
@@ -255,12 +255,7 @@ export function StudentSection({
           normalizedQuery.length === 0 ||
           student.name.toLowerCase().includes(normalizedQuery) ||
           student.nis.toLowerCase().includes(normalizedQuery) ||
-          (student.nisn ?? "").toLowerCase().includes(normalizedQuery) ||
-          (student.birth_place ?? "").toLowerCase().includes(normalizedQuery) ||
-          (student.birth_date ?? "").toLowerCase().includes(normalizedQuery) ||
-          (student.birth_place_date ?? "").toLowerCase().includes(normalizedQuery) ||
-          (student.phone ?? "").toLowerCase().includes(normalizedQuery) ||
-          (student.parent_name ?? "").toLowerCase().includes(normalizedQuery);
+          (student.nisn ?? "").toLowerCase().includes(normalizedQuery);
         return matchesStatus && matchesQuery;
       }),
     [students, statusFilter, normalizedQuery],
@@ -390,9 +385,9 @@ export function StudentSection({
         accentClass: "from-sky-500 via-cyan-500 to-emerald-500",
       },
       {
-        label: "Kontak Ortu",
-        value: students.filter((student) => Boolean(student.parent_phone?.trim())).length,
-        icon: UserPlus,
+        label: "Sudah Ditempatkan",
+        value: new Set(memberships.filter((membership) => membership.is_active).map((membership) => membership.student_id)).size,
+        icon: GraduationCap,
         accentClass: "from-amber-400 via-orange-400 to-emerald-500",
       },
     ];
@@ -554,11 +549,11 @@ export function StudentSection({
           </ScrollableTabsWrapper>
 
           <TabsContent value="profiles" className="mt-4">
-            <DataTableCard isLoading={isLoading} columnCount={9} isEmpty={filteredStudents.length === 0} emptyTitle="Belum ada siswa" emptyDescription="Tambahkan siswa baru agar data muncul pada daftar ini." icon={UsersRound}>
+            <DataTableCard isLoading={isLoading} columnCount={6} isEmpty={filteredStudents.length === 0} emptyTitle="Belum ada siswa" emptyDescription="Tambahkan siswa baru agar data muncul pada daftar ini." icon={UsersRound}>
               <table className="min-w-full border-separate border-spacing-0 text-left">
                 <thead>
                   <tr className="bg-[#f3fbf6] text-sm text-slate-700">
-                    {["Siswa", "NIS / NISN", "Kontak", "Orang Tua", "Angkatan", "Gender", "Tempat, Tanggal Lahir", "Status", "Aksi"].map((label) => (
+                    {["Siswa", "NIS / NISN", "Kelas Aktif", "Gender", "Status", "Aksi"].map((label) => (
                       <th key={label} className={`border-b border-emerald-100/90 px-4 py-4 font-medium first:rounded-tl-[24px] last:rounded-tr-[24px] ${label === "Aksi" ? "text-center" : ""}`}>
                         {label}
                       </th>
@@ -586,20 +581,9 @@ export function StudentSection({
                         </div>
                       </td>
                       <td className="border-t border-slate-100 px-4 py-4">
-                        <div className="space-y-1">
-                          <p>{student.phone || "-"}</p>
-                          <p className="text-xs text-slate-400">{student.address || "Alamat belum diisi"}</p>
-                        </div>
+                        {memberships.find((membership) => membership.student_id === student.id && membership.is_active)?.class_name || "Belum ditempatkan"}
                       </td>
-                      <td className="border-t border-slate-100 px-4 py-4">
-                        <div className="space-y-1">
-                          <p>{student.parent_name || "-"}</p>
-                          <p className="text-xs text-slate-400">{student.parent_phone || "-"}</p>
-                        </div>
-                      </td>
-                      <td className="border-t border-slate-100 px-4 py-4">{student.entry_year}</td>
                       <td className="border-t border-slate-100 px-4 py-4">{formatGender(student.gender)}</td>
-                      <td className="border-t border-slate-100 px-4 py-4">{formatBirthPlaceDate(student.birth_place, student.birth_date, student.birth_place_date)}</td>
                       <td className="border-t border-slate-100 px-4 py-4">
                         <StatusBadge isActive={student.is_active} />
                       </td>
@@ -721,6 +705,7 @@ export function StudentSection({
         open={profileModalOpen}
         onOpenChange={setProfileModalOpen}
         isPending={createStudentMutation.isPending}
+        classes={classes}
         onSubmit={(payload) => createStudentMutation.mutate(payload)}
       />
       <StudentProfileEditModal
@@ -731,6 +716,8 @@ export function StudentSection({
           if (!open) setEditingStudent(null);
         }}
         isPending={updateStudentMutation.isPending}
+        classes={classes}
+        currentClassId={memberships.find((membership) => membership.student_id === editingStudent?.id && membership.is_active)?.class_id}
         onSubmit={(payload) => updateStudentMutation.mutate({ id: editingStudent!.id, payload })}
       />
       <StudentMembershipCreateModal

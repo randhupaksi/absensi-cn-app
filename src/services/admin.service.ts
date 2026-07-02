@@ -18,6 +18,7 @@ import type {
   AdminSubjectScheduleFilters,
   AdminSubjectScheduleOverview,
   AdminTeacherDirectory,
+  AdminTeacherAccountPayload,
   AdminTeacherProfile,
   AdminTeacherProfilePayload,
   AdminTeacherSubjectAssignment,
@@ -290,6 +291,18 @@ export async function createAdminTeacherProfile(
   }
 }
 
+export async function createAdminTeacherAccount(payload: AdminTeacherAccountPayload) {
+  try {
+    const response = await apiClient.post<ApiEnvelope<AdminTeacherProfile>>(
+      "/admin/teacher-accounts",
+      payload,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
 export async function createAdminTeacherSubjectAssignment(
   payload: AdminTeacherSubjectAssignmentPayload,
 ) {
@@ -383,6 +396,21 @@ export async function updateAdminTeacherProfile(
   try {
     const response = await apiClient.patch<ApiEnvelope<AdminTeacherProfile>>(
       `/admin/teacher-profiles/${id}`,
+      payload,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function updateAdminTeacherAccount(
+  id: string,
+  payload: AdminTeacherAccountPayload,
+) {
+  try {
+    const response = await apiClient.patch<ApiEnvelope<AdminTeacherProfile>>(
+      `/admin/teacher-accounts/${id}`,
       payload,
     );
     return response.data.data;

@@ -297,7 +297,7 @@ export function BKStudentsPage() {
                           </td>
                           <td className="px-5 py-4 text-slate-600">
                             <p>{formatGender(student.gender)}</p>
-                            <p className="text-xs">{student.phone || "-"}</p>
+                            <p className="text-xs">{student.nisn || "-"}</p>
                           </td>
                           <td className="px-5 py-4 text-center">
                             <CountBadge value={student.late_count} tone="warning" />

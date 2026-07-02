@@ -131,7 +131,7 @@ async function generateBKSiswaPdf(
     }
     if (columns.identitas) {
       const gender = s.gender === "MALE" ? "Laki-laki" : s.gender === "FEMALE" ? "Perempuan" : "—";
-      row.push(`${gender}\n${s.phone || "—"}`);
+      row.push(`${gender}\nNISN: ${s.nisn || "—"}`);
     }
     if (columns.telat) row.push(String(s.late_count));
     if (columns.alfa) row.push(String(s.alpha_count));

@@ -109,7 +109,7 @@ async function generateWalasSiswaPdf(
       const g = (s.gender ?? "").toUpperCase();
       row.push(g === "MALE" ? "Laki-laki" : g === "FEMALE" ? "Perempuan" : "—");
     }
-    if (columns.identitas) row.push(s.phone || "—");
+    if (columns.identitas) row.push(s.nisn || "—");
     if (columns.telat) row.push(String(s.late_count));
     if (columns.alfa) row.push(String(s.alpha_count));
     if (columns.izinSakit) row.push(String(s.permission_count + s.sick_count));
